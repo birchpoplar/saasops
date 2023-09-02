@@ -31,6 +31,23 @@ Then open the create_tables.sql file, and hit y to load the directory local vari
 
 ## TODOs
 
-1. Implement Rich CLI experience, with transposed dataframes
-2. Add in XLSX export
-3. Move functions to right subfolders
+1. DONE Restructure folders and code as per below:
+
+saas_analyzer/
+├── data/
+│   ├── create_tables.sql
+│   └── sample_data.sql
+├── src/
+│   ├── __init__.py
+│   ├── database.py
+│   ├── dataframe_computations.py
+│   └── visualization.py
+├── .env
+├── main.py
+└── README.md
+
+2. DONE Implement iPython experience for REPL interaction, confirm plot display
+3. Implement functions to list available databases and load one
+   - Given postgres, may need a config text file or something that lists the various databases available
+4. Add in Rich text display for formatting
+

@@ -1,9 +1,10 @@
 import os
 import psycopg2
-from src.display import print_status
 from src.classes import MessageStyle
+from src import utils
 from rich.console import Console
 import textwrap
+import pandas as pd
 
 def connect_database(console: Console):
 
@@ -21,7 +22,7 @@ def connect_database(console: Console):
         password=db_password
     )
 
-    print_status(console, "Database opened successfully", MessageStyle.SUCCESS)
+    utils.print_status(console, "Database opened successfully", MessageStyle.SUCCESS)
 
     # Create a cursor
     cur = conn.cursor()
@@ -58,3 +59,8 @@ def add_new_customer(conn, name, city, state):
     return customer_id
 
         
+def fetch_data_from_db(conn, table_name):
+    # Create a new DataFrame from a database table
+    query = f"SELECT * FROM {table_name}"
+    df = pd.read_sql(query, conn)
+    return df

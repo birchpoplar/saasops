@@ -1,4 +1,4 @@
-from src.display import print_status
+from src import utils
 from src.classes import MessageStyle
 from rich.console import Console
 from datetime import date, timedelta
@@ -6,6 +6,100 @@ import dateutil.relativedelta as rd
 import psycopg2
 import pandas as pd
 import logging
+import calendar
+
+def populate_bkings_carr_arr_df(start_date, end_date, connection):
+    """Generate a DataFrame with Bookings, ARR and CARR for each month. NOTE: the day of the month on each of start_date and end_date is ignored in the creation of date_list that has end of month days only."""
+
+    # Create a cursor
+    cur = connection.cursor()
+
+    # Generate list of dates
+    date_list = []
+    current_date = start_date
+
+    while current_date <= end_date:
+        _, last_day = calendar.monthrange(current_date.year, current_date.month)
+        eom_date = current_date.replace(day=last_day)  # End-of-month date
+        date_list.append(eom_date)
+        
+        # Add one month to get the next start_date
+        current_date = eom_date + rd.relativedelta(days=1)
+
+    # Create empty DataFrame with 'ARR' and 'CARR' columns
+    df = pd.DataFrame(index=date_list, columns=['Bookings', 'ARR', 'CARR'])
+
+    for date in date_list:
+
+        # Calculate Bookings
+        som_date = date.replace(day=1)  # Start-of-month date
+        bookings_sql = (
+            f"SELECT SUM(c.TotalValue) "
+            f"FROM Contracts c "
+            f"WHERE c.ContractDate::DATE BETWEEN '{som_date}'::DATE AND '{date}'::DATE"
+        )
+        cur.execute(bookings_sql)
+        bookings_value = cur.fetchone()[0]
+        if bookings_value is None:
+            bookings_value = 0
+        df.at[date, 'Bookings'] = bookings_value
+
+        # Create the SQL query for ARR
+        arr_sql = (
+            f"SELECT SUM(s.SegmentValue) "
+            f"FROM Segments s "
+            f"JOIN Contracts c ON s.ContractID = c.ContractID "
+            f"WHERE s.Type = 'Subscription' "
+            f"AND '{date}'::DATE BETWEEN c.TermStartDate::DATE AND s.SegmentEndDate::DATE"
+        )
+        # Debug print
+        # print("Debug ARR SQL:", arr_sql)
+        
+        # Execute ARR SQL
+        cur.execute(arr_sql)
+        
+        arr_value = cur.fetchone()[0]
+        if arr_value is None:
+            arr_value = 0
+        df.at[date, 'ARR'] = arr_value
+        
+        # Create the SQL query for CARR
+        carr_sql = (
+            f"WITH RenewedContracts AS ("
+            f"  SELECT ContractID, RenewalFromContractID, ContractDate "
+            f"  FROM Contracts "
+            f"  WHERE RenewalFromContractID IS NOT NULL"
+            f"), "
+            f"ValidContracts AS ("
+            f"  SELECT c.ContractID "
+            f"  FROM Contracts c "
+            f"  LEFT JOIN Segments s ON c.ContractID = s.ContractID "
+            f"  LEFT JOIN RenewedContracts r ON c.ContractID = r.RenewalFromContractID "
+            f"  WHERE '{date}'::DATE <= COALESCE(r.ContractDate::DATE, '{date}'::DATE + 1) "
+            f"  AND '{date}'::DATE BETWEEN c.ContractDate::DATE AND s.SegmentEndDate::DATE "
+            f") "
+            f"SELECT SUM(s.SegmentValue) "
+            f"FROM Segments s "
+            f"JOIN ValidContracts vc ON s.ContractID = vc.ContractID "
+            f"WHERE s.Type = 'Subscription'"
+        )
+        
+        # Debug print
+        # print("Debug CARR SQL:", carr_sql)
+        
+        # Execute CARR SQL
+        cur.execute(carr_sql)
+        
+        carr_value = cur.fetchone()[0]
+        if carr_value is None:
+            carr_value = 0
+        df.at[date, 'CARR'] = carr_value
+    
+    # Close the cursor
+    cur.close()
+    
+    return df
+
 
 def populate_revenue_df(start_date, end_date, connection):
     """Populate a DataFrame with active revenue for each customer in each month."""

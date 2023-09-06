@@ -110,10 +110,14 @@ def populate_revenue_df(start_date, end_date, connection):
     # Generate list of dates
     date_list = []
     current_date = start_date
-    
+
     while current_date <= end_date:
-        date_list.append(current_date)
-        current_date += rd.relativedelta(months=1)
+        _, last_day = calendar.monthrange(current_date.year, current_date.month)
+        mom_date = current_date.replace(day=15)  # Middle-of-month date
+        date_list.append(mom_date)
+        
+        # Add one month to get the next start_date
+        current_date = mom_date + rd.relativedelta(months=1)
 
     # Retrieve unique customer names from the Customers table
     cur.execute("SELECT DISTINCT Name FROM Customers")
@@ -149,15 +153,19 @@ def populate_metrics_df(start_date, end_date, connection):
     
     # Create a cursor
     cur = connection.cursor()
-    
+
     # Generate list of dates
     date_list = []
     current_date = start_date
-    
-    while current_date <= end_date:
-        date_list.append(current_date)
-        current_date += rd.relativedelta(months=1)
 
+    while current_date <= end_date:
+        _, last_day = calendar.monthrange(current_date.year, current_date.month)
+        mom_date = current_date.replace(day=15)  # Middle-of-month date
+        date_list.append(mom_date)
+        
+        # Add one month to get the next start_date
+        current_date = mom_date + rd.relativedelta(months=1)
+    
     # Retrieve unique customer names from the Customers table
     cur.execute("SELECT DISTINCT Name FROM Customers")
     customer_names = [row[0] for row in cur.fetchall()]
@@ -166,7 +174,7 @@ def populate_metrics_df(start_date, end_date, connection):
     metrics_df = pd.DataFrame(index=date_list, columns=["New MRR", "Churn MRR", "Expansion MRR", "Contraction MRR", "Starting MRR", "Ending MRR"])
    
     # Find the starting MRR figure
-    prior_month_date = start_date - rd.relativedelta(months=1)
+    prior_month_date = date_list[0] - rd.relativedelta(months=1)
     prior_month_revenue_df = populate_revenue_df(prior_month_date, prior_month_date, connection)
 
     # Calculate and populate metrics for the second DataFrame

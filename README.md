@@ -31,23 +31,6 @@ Then open the create_tables.sql file, and hit y to load the directory local vari
 
 ## TODOs
 
-1. DONE Restructure folders and code as per below:
-
-saas_analyzer/
-├── data/
-│   ├── create_tables.sql
-│   └── sample_data.sql
-├── src/
-│   ├── __init__.py
-│   ├── database.py
-│   ├── dataframe_computations.py
-│   └── visualization.py
-├── .env
-├── main.py
-└── README.md
-
-2. DONE Implement iPython experience for REPL interaction, confirm plot display
-3. Implement functions to list available databases and load one
-   - Given postgres, may need a config text file or something that lists the various databases available
-4. Add in Rich text display for formatting
-
+1. implement input checking on contracts/segments, sanity check to ensure the EoM and MoM calculations work correctly
+2. implement pylatex, to generate PDF via LaTeX, and this could import text from input files as commentary to the images, etc.
+3. start using with two clients properly

@@ -118,7 +118,7 @@ def ttm_ndr_gdr_chart(conn, target_date):
                 textcoords="offset points", ha='center', va='bottom')
     
     plt.tight_layout()
-    plt.show()
+    plt.savefig("trailing_12_month_values.png", dpi=300)
 
 
 def create_mrr_change_chart(conn, start_date, end_date):
@@ -178,7 +178,7 @@ def create_mrr_change_chart(conn, start_date, end_date):
     
     plt.xticks(rotation=45)
     plt.tight_layout()
-    plt.show()
+    plt.savefig("mrr_change.png", dpi=300)
 
 
 def create_monthly_mrr_chart(conn, start_date, end_date):
@@ -237,7 +237,7 @@ def create_monthly_mrr_chart(conn, start_date, end_date):
 
     plt.xticks(rotation=45)
     plt.tight_layout()
-    plt.show()
+    plt.savefig("monthly_mrr.png", dpi=300)
 
 
 def create_bookings_arr_carr_chart(conn, start_date, end_date):
@@ -288,4 +288,4 @@ def create_bookings_arr_carr_chart(conn, start_date, end_date):
 
     plt.xticks(rotation=45)
     plt.tight_layout()
-    plt.show()
+    plt.savefig("bookings_arr_carr.png", dpi=300)

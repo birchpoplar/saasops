@@ -15,16 +15,16 @@ console = Console()
 
 conn, cur = database.connect_database(console)
 
-start_date = date(2022, 1, 31)
-end_date = date(2023, 6, 30)
+start_date = date(2022, 2, 28)
+end_date = date(2023, 2, 28)
 
-# df = calc.populate_revenue_df(start_date, end_date, conn)
+df = calc.populate_revenue_df(start_date, end_date, conn)
 
-# metrics_df = calc.populate_metrics_df(start_date, end_date, conn)
+metrics_df = calc.populate_metrics_df(start_date, end_date, conn)
 
-# display.print_dataframe(df, "Revenue by Customer", console)
+display.print_dataframe(df, "Revenue by Customer", console)
 
-# display.print_dataframe(metrics_df, "Revenue Metrics", console)
+display.print_dataframe(metrics_df, "Revenue Metrics", console)
 
 display.print_customers(conn, console)
 
@@ -38,14 +38,9 @@ bkings_carr_arr_df = calc.populate_bkings_carr_arr_df(start_date, end_date, conn
 
 display.print_dataframe(bkings_carr_arr_df, "Bookings, ARR and CARR", console)
 
-# visualization.create_mrr_change_chart(conn, start_date, end_date)
-
-# visualization.create_monthly_mrr_chart(conn, start_date, end_date)
-
-# visualization.ttm_ndr_gdr_chart(conn, date(2023,3,15))
-
-# visualization.ttm_ndr_gdr_chart(conn, date(2023,6,15))
-
-# visualization.create_bookings_arr_carr_chart(conn, start_date, end_date)
+visualization.create_mrr_change_chart(conn, start_date, end_date)
+visualization.create_monthly_mrr_chart(conn, start_date, end_date)
+visualization.ttm_ndr_gdr_chart(conn, date(2023,6,15))
+visualization.create_bookings_arr_carr_chart(conn, start_date, end_date)
 
 display.export_data_to_xlsx(conn, start_date, end_date)

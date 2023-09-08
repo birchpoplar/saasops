@@ -23,17 +23,21 @@ def round_up_to_base(x, base=5000):
 def ttm_ndr_gdr_chart(conn, target_date):
 
     # Calculate trailing 12-month values for a given date (e.g., 2023-06-15)
-    trailing_start_date = pd.to_datetime(target_date) - pd.DateOffset(months=11)
-    trailing_end_date = pd.to_datetime(target_date)
+    start_date = pd.to_datetime(target_date) - pd.DateOffset(months=11)
+    end_date = pd.to_datetime(target_date)
 
     # Source the appropriate dataframes for the metrics calcs
-    metrics_df = calc.populate_metrics_df(trailing_start_date, trailing_end_date, conn)
-
+    metrics_df = calc.populate_metrics_df(start_date, end_date, conn)
+    
+    date_list = metrics_df.index.strftime('%Y-%m-%d').tolist()
+    
+    trailing_start_date = date_list[0]
+    trailing_end_date = date_list[-1]
+ 
     # Convert trailing_start_date to the same format as the index
-    trailing_start_date = trailing_start_date.strftime("%Y-%m-%d")
     
     trailing_df = metrics_df.loc[trailing_start_date:trailing_end_date]
-
+    
     beginning_arr = trailing_df.loc[trailing_start_date, "Starting MRR"] * 12
     churn = (-trailing_df["Churn MRR"].sum()) * 12
     contraction = (-trailing_df["Contraction MRR"].sum()) * 12
@@ -118,7 +122,7 @@ def ttm_ndr_gdr_chart(conn, target_date):
                 textcoords="offset points", ha='center', va='bottom')
     
     plt.tight_layout()
-    plt.savefig("trailing_12_month_values.png", dpi=300)
+    plt.savefig("exports/trailing_12_month_values.png", dpi=300)
 
 
 def create_mrr_change_chart(conn, start_date, end_date):
@@ -178,7 +182,7 @@ def create_mrr_change_chart(conn, start_date, end_date):
     
     plt.xticks(rotation=45)
     plt.tight_layout()
-    plt.savefig("mrr_change.png", dpi=300)
+    plt.savefig("exports/mrr_change.png", dpi=300)
 
 
 def create_monthly_mrr_chart(conn, start_date, end_date):
@@ -237,7 +241,7 @@ def create_monthly_mrr_chart(conn, start_date, end_date):
 
     plt.xticks(rotation=45)
     plt.tight_layout()
-    plt.savefig("monthly_mrr.png", dpi=300)
+    plt.savefig("exports/monthly_mrr.png", dpi=300)
 
 
 def create_bookings_arr_carr_chart(conn, start_date, end_date):
@@ -288,4 +292,4 @@ def create_bookings_arr_carr_chart(conn, start_date, end_date):
 
     plt.xticks(rotation=45)
     plt.tight_layout()
-    plt.savefig("bookings_arr_carr.png", dpi=300)
+    plt.savefig("exports/bookings_arr_carr.png", dpi=300)

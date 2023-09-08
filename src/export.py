@@ -82,7 +82,9 @@ def export_data_to_pptx(engine, start_date, end_date):
     
     # Create a new presentation
     prs = Presentation()
-
+    prs.slide_width = Inches(16)
+    prs.slide_height = Inches(9)
+    
     chart_slides_data = [
         {"title":"Bookings, ARR, CARR", "image_path":"exports/bookings_arr_carr.png"},
         {"title":"Monthly MRR", "image_path":"exports/monthly_mrr.png"},
@@ -102,5 +104,5 @@ def add_chart_slide(prs, slide_title, image_path):
     title.text = slide_title
     left = Inches(0.5)
     top = Inches(1.5)
-    height = Inches(3)
+    height = Inches(6)
     pic = slide.shapes.add_picture(image_path, left, top, height=height)

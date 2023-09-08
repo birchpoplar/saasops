@@ -7,7 +7,7 @@ import textwrap
 from dotenv import load_dotenv
 import os
 from src import classes, display, database, calc, visualization
-from matplotlib.ticker import FuncFormatter
+from matplotlib.ticker import FuncFormatter, FixedLocator
 import numpy as np
 import math
 
@@ -83,6 +83,7 @@ def ttm_ndr_gdr_chart(conn, target_date):
     
     # Wrap and rotate x-axis tick labels
     wrapped_labels = [textwrap.fill(label, width=12) for label in metrics]  # Adjust width as needed
+    ax.xaxis.set_major_locator(FixedLocator(locs=range(len(wrapped_labels))))
     ax.set_xticklabels(wrapped_labels, rotation=0, ha="center")  # Keep rotation as 0
     
     # Add horizontal dotted annotation lines between bars

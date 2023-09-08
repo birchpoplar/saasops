@@ -14,7 +14,6 @@ logging.basicConfig(level=logging.ERROR)
 console = Console()
 
 engine = database.connect_database(console)
-print(type(engine))
 
 start_date = date(2022, 2, 28)
 end_date = date(2023, 2, 28)

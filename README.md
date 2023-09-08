@@ -1,6 +1,6 @@
 # SaaS Analyzer
 
-Track Customers, Contracts, Revenue Segments and Invoices for SaaS finance and revenue metrics administration.
+Track Customers, Contracts, Revenue Segments and Invoices for SaaS finance administration. Generates recognized revenue, MRR, ARR and associated metrics for chosen time period. Output tables and charts to terminal or export to XLSX or PPTX.
 
 ## Setting up Postgres DB
 
@@ -31,6 +31,6 @@ Then open the create_tables.sql file, and hit y to load the directory local vari
 
 ## TODOs
 
-1. implement input checking on contracts/segments, sanity check to ensure the EoM and MoM calculations work correctly
-2. implement pylatex, to generate PDF via LaTeX, and this could import text from input files as commentary to the images, etc.
-3. start using with two clients properly
+1. add in color selection for charts with config load
+2. add first pytests with input dataframes/DB and output revenue/metrics
+3. add input checking, or review function to analyze contracts/segments

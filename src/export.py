@@ -39,7 +39,7 @@ def export_data_to_xlsx(conn, start_date, end_date):
     df_carrarr = calc.populate_bkings_carr_arr_df(start_date, end_date, conn)
     
     # Create a Pandas Excel writer using XlsxWriter as the engine.
-    with pd.ExcelWriter('data.xlsx', engine='xlsxwriter') as writer:
+    with pd.ExcelWriter('exports/data.xlsx', engine='xlsxwriter') as writer:
         df_customers.to_excel(writer, sheet_name='customers', index=False)
         df_contracts.to_excel(writer, sheet_name='contracts', index=False)
         df_invoices.to_excel(writer, sheet_name='invoices', index=False)
@@ -81,9 +81,9 @@ def export_data_to_pptx(engine, start_date, end_date):
     visualization.create_bookings_arr_carr_chart(engine, start_date, end_date)
     
     # Create a new presentation
-    prs = Presentation()
-    prs.slide_width = Inches(16)
-    prs.slide_height = Inches(9)
+    prs = Presentation('exports/ppt_template.pptx')
+    prs.slide_width = Inches(13.333)
+    prs.slide_height = Inches(7.5)
     
     chart_slides_data = [
         {"title":"Bookings, ARR, CARR", "image_path":"exports/bookings_arr_carr.png"},
@@ -95,14 +95,14 @@ def export_data_to_pptx(engine, start_date, end_date):
     for slide_data in chart_slides_data:
         add_chart_slide(prs, slide_data["title"], slide_data["image_path"])
 
-    prs.save("data.pptx")
+    prs.save("exports/data_export.pptx")
 
     
 def add_chart_slide(prs, slide_title, image_path):
-    slide = prs.slides.add_slide(prs.slide_layouts[5])
+    slide = prs.slides.add_slide(prs.slide_layouts[23])
     title = slide.shapes.title
     title.text = slide_title
     left = Inches(0.5)
     top = Inches(1.5)
-    height = Inches(6)
+    height = Inches(5)
     pic = slide.shapes.add_picture(image_path, left, top, height=height)

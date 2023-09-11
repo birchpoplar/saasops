@@ -33,4 +33,9 @@ Then open the create_tables.sql file, and hit y to load the directory local vari
 
 1. add in color selection for charts with config load
 2. add first pytests with input dataframes/DB and output revenue/metrics
-3. add input checking, or review function to analyze contracts/segments
+3. finish off typer command definitions plus docstrings
+4. build in database selection command/config (from CLI)
+5. sort out standard status update printlines for all functions (maybe Rich with horizontal lines etc.)
+6. build sanity check on segments/contracts - match total value and timeline, identify inconsistencies
+7. build in sanity/correctness checking on inputs, e.g. end date after start date etc.
+8. export pptx function should take input filename as argument

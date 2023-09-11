@@ -5,12 +5,13 @@ from rich.text import Text
 from rich.table import Table
 from datetime import datetime
 import pandas as pd
+from sqlalchemy import text
 
 from src import classes, database, calc
 
 # Database display functions
 
-def print_customers(connection, console=None):
+def print_customers(engine, console=None):
 
     # If no console object is provided, create a new one
     if console is None:
@@ -25,28 +26,23 @@ def print_customers(connection, console=None):
     table.add_column("City", justify="left")
     table.add_column("State", justify="left")
     
-    # Create a cursor
-    cur = connection.cursor()
+    with engine.connect() as conn:
+        # Execute the SQL query to fetch data
+        result = conn.execute(text("SELECT * FROM Customers;"))
     
-    # Execute the SQL query to fetch data
-    cur.execute("SELECT * FROM Customers;")
-    
-    # Fetch all rows
-    rows = cur.fetchall()
+        # Fetch all rows
+        rows = result.fetchall()
     
     # Add rows to the Rich table
     for row in rows:
         customer_id, name, city, state = row
         table.add_row(str(customer_id), name, city, state)
         
-    # Close the cursor
-    cur.close()
-    
     # Print the table to the console
     console.print(table)
 
 
-def print_segments(connection, console=None):
+def print_segments(engine, console=None):
     
     # If no console object is provided, create a new one
     if console is None:
@@ -67,20 +63,19 @@ def print_segments(connection, console=None):
     table.add_column("Type", justify="left")
     table.add_column("Segment Value", justify="right")
     
-    # Create a cursor
-    cur = connection.cursor()
     
     # Execute the SQL query to fetch data
-    query = """
-    SELECT s.SegmentID, s.ContractID, c.RenewalFromContractID, cu.Name, c.ContractDate, s.SegmentStartDate, s.SegmentEndDate, s.Title, s.Type, s.SegmentValue
-    FROM Segments s
-    JOIN Contracts c ON s.ContractID = c.ContractID
-    JOIN Customers cu ON c.CustomerID = cu.CustomerID;
-    """
-    cur.execute(query)
+    with engine.connect() as conn:
+        query = text("""
+        SELECT s.SegmentID, s.ContractID, c.RenewalFromContractID, cu.Name, c.ContractDate, s.SegmentStartDate, s.SegmentEndDate, s.Title, s.Type, s.SegmentValue
+        FROM Segments s
+        JOIN Contracts c ON s.ContractID = c.ContractID
+        JOIN Customers cu ON c.CustomerID = cu.CustomerID;
+        """)
+        result = conn.execute(query)
     
     # Fetch all rows
-    rows = cur.fetchall()
+    rows = result.fetchall()
     
     # Add rows to the Rich table
     for row in rows:
@@ -98,14 +93,73 @@ def print_segments(connection, console=None):
             f"{segment_value:.2f}"
         )
         
-    # Close the cursor
-    cur.close()
-    
+    # Print the table to the console
+    console.print(table)
+
+def print_segment(engine, segment_id, console=None):
+    if console is None:
+        console = Console()
+
+    # Initialize the Table
+    table = Table(title=f"Segment ID {segment_id}")
+
+    # Add columns
+    table.add_column("Field", justify="left")
+    table.add_column("Value", justify="right")
+
+    with engine.connect() as conn:
+        params = {"segment_id": segment_id}
+        result = conn.execute(text("SELECT * FROM Segments WHERE SegmentID = :segment_id;"), params)
+
+    # Fetch all rows
+    row = result.fetchone()
+
+    if row is None:
+        console.print(f"Segment ID {segment_id} does not exist.")
+        return
+
+    column_names = result.keys()
+
+    for field, value in zip(column_names, row):
+        table.add_row(field, str(value))
+
     # Print the table to the console
     console.print(table)
     
 
-def print_contracts(connection, console=None):
+def print_contract(engine, contract_id, console=None):
+    if console is None:
+        console = Console()
+
+    # Initialize the Table
+    table = Table(title=f"Contract ID {contract_id}")
+
+    # Add columns
+    table.add_column("Field", justify="left")
+    table.add_column("Value", justify="right")
+
+
+    with engine.connect() as conn:
+        params = {"contract_id": contract_id}
+        result = conn.execute(text("SELECT * FROM Contracts WHERE ContractID = :contract_id;"), params)
+
+    # Fetch all rows
+    row = result.fetchone()
+
+    if row is None:
+        console.print(f"Contract ID {contract_id} does not exist.")
+        return
+
+    column_names = result.keys()
+
+    for field, value in zip(column_names, row):
+        table.add_row(field, str(value))
+
+    # Print the table to the console
+    console.print(table)
+        
+
+def print_contracts(engine, console=None):
     
     # If no console object is provided, create a new one
     if console is None:
@@ -124,14 +178,12 @@ def print_contracts(connection, console=None):
     table.add_column("Term End Date", justify="right")
     table.add_column("Total Value", justify="right")
     
-    # Create a cursor
-    cur = connection.cursor()
-    
-    # Execute the SQL query to fetch data
-    cur.execute(f"SELECT * FROM Contracts;")
+    with engine.connect() as conn:
+        # Execute the SQL query to fetch data
+        result = conn.execute(text("SELECT * FROM Contracts;"))
     
     # Fetch all rows
-    rows = cur.fetchall()
+    rows = result.fetchall()
     
     # Add rows to the Rich table
     for row in rows:
@@ -147,16 +199,11 @@ def print_contracts(connection, console=None):
             f"{total_value:.2f}"
         )
         
-    # Close the cursor
-    cur.close()
-    
     # Print the table to the console
     console.print(table)
 
-
     
-    
-def print_customer_contracts(connection, customer_id, console=None):
+def print_customer_contracts(engine, customer_id, console=None):
 
     # If no console object is provided, create a new one
     if console is None:
@@ -175,14 +222,12 @@ def print_customer_contracts(connection, customer_id, console=None):
     table.add_column("Term End Date", justify="right")
     table.add_column("Total Value", justify="right")
     
-    # Create a cursor
-    cur = connection.cursor()
-    
     # Execute the SQL query to fetch data
-    cur.execute(f"SELECT * FROM Contracts WHERE CustomerID = {customer_id};")
-    
+    with engine.connect() as conn:
+        result = conn.execute(text("SELECT * FROM Contracts WHERE CustomerID = :customer_id;"), {"customer_id": customer_id})
+
     # Fetch all rows
-    rows = cur.fetchall()
+    rows = result.fetchall()
     
     # Add rows to the Rich table
     for row in rows:
@@ -198,9 +243,6 @@ def print_customer_contracts(connection, customer_id, console=None):
             f"{total_value:.2f}"
         )
         
-    # Close the cursor
-    cur.close()
-    
     # Print the table to the console
     console.print(table)
     

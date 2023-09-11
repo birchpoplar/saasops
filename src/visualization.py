@@ -10,7 +10,7 @@ from src import classes, display, database, calc, visualization
 from matplotlib.ticker import FuncFormatter, FixedLocator
 import numpy as np
 import math
-
+from constants import COLOR_MAP
 
 def thousands_formatter(x, pos):
     return f"${x/1000:,.0f}K"
@@ -66,7 +66,14 @@ def ttm_ndr_gdr_chart(conn, target_date):
     values = [beginning_arr, churn, contraction, gross_dollar_retention, expansion, net_dollar_retention]
     
     fig, ax = plt.subplots(figsize=(10, 6))
-    bars = ax.bar(metrics, values, color=['blue', 'gray', 'gray', 'orange', 'blue', 'orange'])
+    bars = ax.bar(metrics, values, color=[
+        COLOR_MAP["navy_blue"],
+        COLOR_MAP["slate_blue"],
+        COLOR_MAP["sky_blue"],
+        COLOR_MAP["teal"],
+        COLOR_MAP["green_1"],
+        COLOR_MAP["teal"]
+        ])
     
     # Adjust the positioning of floating bars
     bars[1].set_y(beginning_arr)
@@ -145,7 +152,12 @@ def create_mrr_change_chart(conn, start_date, end_date):
     aggregate_mrr = metrics_df['New MRR'] + metrics_df['Expansion MRR'] - metrics_df['Churn MRR'] - metrics_df['Contraction MRR']
     
     # Color for the bars
-    colors = ['royalblue', 'lightsteelblue', 'sandybrown', 'peachpuff']
+    colors = [
+        COLOR_MAP["green_2"],
+        COLOR_MAP["green_1"],
+        COLOR_MAP["slate_blue"],
+        COLOR_MAP["sky_blue"]
+    ]
 
     # Create the bar chart
     fig, ax = plt.subplots(figsize=(12, 8))
@@ -168,7 +180,7 @@ def create_mrr_change_chart(conn, start_date, end_date):
             ax.text(i, churn + contraction/2, f"${-contraction/1000:,.0f}K", ha='center', va='center')
 
     # Add a line plot of aggregate MRR
-    ax.plot(months, aggregate_mrr, color='grey', linestyle='--', marker='o', label='Aggregate MRR Change')
+    ax.plot(months, aggregate_mrr, color=COLOR_MAP["navy_blue"], linestyle='--', marker='o', label='Aggregate MRR Change')
             
     # Labeling and formatting
     ax.set_ylabel('MRR', fontsize=14)
@@ -215,7 +227,13 @@ def create_monthly_mrr_chart(conn, start_date, end_date):
     rounded_max_abs_value = round_up_to_base(max_abs_value, base=10000)
 
     # Color for the bars
-    colors = ['darkkhaki', 'royalblue', 'lightsteelblue', 'sandybrown', 'peachpuff']
+    colors = [
+        COLOR_MAP["electric_green"],
+        COLOR_MAP["green_2"],
+        COLOR_MAP["green_1"],
+        COLOR_MAP["slate_blue"],
+        COLOR_MAP["sky_blue"]
+    ]
 
     # Create the bar chart
     fig, ax = plt.subplots(figsize=(12, 8))
@@ -264,11 +282,11 @@ def create_bookings_arr_carr_chart(conn, start_date, end_date):
     fig, ax = plt.subplots(figsize=(12, 8))
 
     # Create the bar chart for 'Bookings'
-    bars = ax.bar(months, bookings, color='skyblue', label='Bookings')
+    bars = ax.bar(months, bookings, color=COLOR_MAP["slate_blue"], label='Bookings')
 
     # Create line plots for 'ARR' and 'CARR'
-    ax.plot(months, carr, 'o-', label='CARR', color='orange')
-    ax.plot(months, arr, 'o-', label='ARR', color='green')
+    ax.plot(months, carr, 'o-', label='CARR', color=COLOR_MAP["electric_green"])
+    ax.plot(months, arr, 'o-', label='ARR', color=COLOR_MAP["navy_blue"])
 
     # Labeling and formatting
     ax.set_xlabel('Month', fontsize=14, color='black')

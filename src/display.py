@@ -272,3 +272,18 @@ def print_dataframe(df, title, console: Console):
     console.print(table)
     return True
 
+def print_table(df, title, console: Console):
+    table = Table(title=title, show_header=True, show_lines=True)
+    
+    # Add columns
+    for column in df.columns:
+        table.add_column(column, justify="right")
+    
+    # Add rows to the table
+    for column, row in df.iterrows():
+        values = row.values
+        formatted_values = [str(value) for value in values]
+        table.add_row(column, *formatted_values)
+    
+    console.print(table)
+    return True

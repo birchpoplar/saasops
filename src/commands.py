@@ -5,19 +5,6 @@ from datetime import date, datetime
 
 cli_app = Typer()
 
-# Export commands 
-
-@cli_app.command()
-def exportall(start_date: str, end_date: str):
-    """
-    Export all chart data to PowerPoint presentation.
-    """
-    console = Console()
-    engine = database.connect_database(console)
-    start_date = date(start_date)
-    end_date = date(end_date)
-    export.export_data_to_pptx(engine, start_date, end_date)
-
 # Customer commands
     
 @cli_app.command()
@@ -154,3 +141,32 @@ def metricsdf(start_date: str, end_date: str):
     end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
     df = calc.populate_metrics_df(start_date, end_date, engine)
     display.print_dataframe(df, 'Metrics', console)
+
+@cli_app.command()
+def arrdf(date: str):
+    console = Console()
+    engine = database.connect_database(console)
+    date = datetime.strptime(date, '%Y-%m-%d').date()
+    df = calc.customer_arr_df(date, engine)
+    display.print_table(df, f'ARR at {date}', console)
+
+@cli_app.command()
+def carrdf(date: str):
+    console = Console()
+    engine = database.connect_database(console)
+    date = datetime.strptime(date, '%Y-%m-%d').date()
+    df = calc.customer_carr_df(date, engine)
+    display.print_table(df, f'CARR at {date}', console)
+    
+# Export commands 
+
+@cli_app.command()
+def exportall(start_date: str, end_date: str):
+    """
+    Export all chart data to PowerPoint presentation.
+    """
+    console = Console()
+    engine = database.connect_database(console)
+    start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+    end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+    export.export_data_to_pptx(engine, start_date, end_date)

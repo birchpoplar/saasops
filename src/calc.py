@@ -228,3 +228,89 @@ def populate_metrics_df(start_date, end_date, engine):
         logging.info(f"Ending MRR: {ending_mrr_sum}")
 
     return metrics_df
+
+def customer_arr_df(date, engine):
+    """Generate a DataFrame with ARR for each customer for a given date."""
+
+    # Create an empty DataFrame
+    df = pd.DataFrame(columns=['CustomerName', 'ARR'])
+    
+    with engine.begin() as conn:
+        # Create the SQL query for ARR by Customer
+        arr_by_customer_sql = text(
+            f"SELECT cu.Name, SUM(s.SegmentValue) as ARR "
+            f"FROM Segments s "
+            f"JOIN Contracts c ON s.ContractID = c.ContractID "
+            f"JOIN Customers cu ON c.CustomerID = cu.CustomerID "
+            f"WHERE s.Type = 'Subscription' "
+            f"AND '{date}'::DATE BETWEEN c.TermStartDate::DATE AND s.SegmentEndDate::DATE "
+            f"GROUP BY cu.Name"
+        )
+         
+        # Execute SQL to get ARR by customer
+        arr_by_customer_result = conn.execute(arr_by_customer_sql, {'date': date}).fetchall()
+
+        # Populate DataFrame
+        for row in arr_by_customer_result:
+            customer_name = row[0]
+            arr_value = row[1] if row[1] is not None else 0
+            df = pd.concat([df, pd.DataFrame([[customer_name, arr_value]], columns=['CustomerName', 'ARR'])])
+
+    # Set 'CustomerName' as the DataFrame index
+    df.set_index('CustomerName', inplace=True)
+
+    total_arr = df['ARR'].sum()
+    df.loc['Total ARR'] = total_arr
+    
+    return df
+
+
+def customer_carr_df(date, engine):
+    """Generate a DataFrame with CARR for each customer for a given date."""
+    
+    # Create an empty DataFrame
+    df = pd.DataFrame(columns=['CustomerName', 'CARR'])
+    
+    with engine.begin() as conn:
+        
+        # Create the SQL query for CARR by Customer
+        carr_by_customer_sql = text(
+            f"WITH RenewedContracts AS ("
+            f"  SELECT ContractID, RenewalFromContractID, ContractDate "
+            f"  FROM Contracts "
+            f"  WHERE RenewalFromContractID IS NOT NULL"
+            f"), "
+            f"ValidContracts AS ("
+            f"  SELECT c.ContractID, cu.CustomerID "
+            f"  FROM Contracts c "
+            f"  LEFT JOIN Segments s ON c.ContractID = s.ContractID "
+            f"  LEFT JOIN RenewedContracts r ON c.ContractID = r.RenewalFromContractID "
+            f"  LEFT JOIN Customers cu ON c.CustomerID = cu.CustomerID "
+            f"  WHERE '{date}'::DATE <= COALESCE(r.ContractDate::DATE, '{date}'::DATE + 1) "
+            f"  AND '{date}'::DATE BETWEEN c.ContractDate::DATE AND s.SegmentEndDate::DATE "
+            f") "
+            f"SELECT cu.Name, SUM(s.SegmentValue) as CARR "
+            f"FROM Segments s "
+            f"JOIN ValidContracts vc ON s.ContractID = vc.ContractID "
+            f"JOIN Customers cu ON vc.CustomerID = cu.CustomerID "
+            f"WHERE s.Type = 'Subscription' "
+            f"GROUP BY cu.Name"
+        )
+        
+        # Execute SQL to get CARR by customer
+        carr_by_customer_result = conn.execute(carr_by_customer_sql, {'date': date}).fetchall()
+
+        # Populate DataFrame
+        for row in carr_by_customer_result:
+            customer_name = row[0]
+            carr_value = row[1] if row[1] is not None else 0
+            df = pd.concat([df, pd.DataFrame([[customer_name, carr_value]], columns=['CustomerName', 'CARR'])])
+    
+    # Set 'CustomerName' as the DataFrame index
+    df.set_index('CustomerName', inplace=True)
+    
+    # Calculate and append the total CARR
+    total_carr = df['CARR'].sum()
+    df.loc['Total CARR'] = total_carr
+    
+    return df

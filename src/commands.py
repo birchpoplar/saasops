@@ -2,6 +2,7 @@ from src import database, display, export, calc
 from typer import Typer
 from rich.console import Console
 from datetime import date, datetime
+from typing import Optional
 
 cli_app = Typer()
 
@@ -52,10 +53,10 @@ def listcont():
     display.print_contracts(engine, console)
 
 @cli_app.command()
-def contadd(customer_id: int, renewal_id: int, reference: str, contract_date: str, term_start_date: str, term_end_date: str, total_value: int):
+def contadd(customer_id: int, reference: str, contract_date: str, term_start_date: str, term_end_date: str, total_value: int, renewal_id: Optional[int]=None):
     console = Console()
     engine = database.connect_database(console)
-    print(database.add_contract(engine, customer_id, renewal_id, reference, contract_date, term_start_date, term_end_date, total_value))
+    print(database.add_contract(engine, customer_id, reference, contract_date, term_start_date, term_end_date, total_value, renewal_id))
 
 @cli_app.command()
 def contdel(contract_id: int):
@@ -112,6 +113,40 @@ def segupd(segment_id: int, field: str, value: str):
     console = Console()
     engine = database.connect_database(console)
     print(database.update_segment(engine, segment_id, field, value))
+
+# Invoice commands
+
+@cli_app.command()
+def listinv():
+    console = Console()
+    engine = database.connect_database(console)
+    display.print_invoices(engine, console)
+
+@cli_app.command()
+def invadd(number: str, date: str, dayspayable: int, amount: int):
+    console = Console()
+    engine = database.connect_database(console)
+    print(database.add_invoice(engine, number, date, dayspayable, amount))
+
+@cli_app.command()
+def invdel(invoice_id: int):
+    console = Console()
+    engine = database.connect_database(console)
+    print(database.delete_invoice(engine, invoice_id))
+
+# Invoice Segment commands
+
+@cli_app.command()
+def addinvseg(invoice_id: int, segment_id: int):
+    console = Console()
+    engine = database.connect_database(console)
+    print(database.add_invoice_to_segment_mapping(engine, invoice_id, segment_id))
+
+@cli_app.command()
+def delinvseg(invoice_segment_id: int):
+    console = Console()
+    engine = database.connect_database(console)
+    print(database.delete_invoice_to_segment_mapping(engine, invoice_segment_id))
     
 # Calculation commands
 
@@ -157,16 +192,27 @@ def carrdf(date: str):
     date = datetime.strptime(date, '%Y-%m-%d').date()
     df = calc.customer_carr_df(date, engine)
     display.print_table(df, f'CARR at {date}', console)
+
+@cli_app.command()
+def custmetricsdf(start_date: str, end_date: str):
+    console = Console()
+    engine = database.connect_database(console)
+    start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+    end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+    df = calc.populate_customer_metrics_df(start_date, end_date, engine)
+    print(df)
+    # display.print_dataframe(df, 'Customer metrics', console)
     
 # Export commands 
 
 @cli_app.command()
 def exportall(start_date: str, end_date: str):
     """
-    Export all chart data to PowerPoint presentation.
+    Export all chart data to PowerPoint presentation and Excel workbook.
     """
     console = Console()
     engine = database.connect_database(console)
     start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
     end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
     export.export_data_to_pptx(engine, start_date, end_date)
+    export.export_data_to_xlsx(engine, start_date, end_date)

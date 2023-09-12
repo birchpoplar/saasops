@@ -245,6 +245,56 @@ def print_customer_contracts(engine, customer_id, console=None):
         
     # Print the table to the console
     console.print(table)
+
+    
+def print_invoices(engine, console=None):
+    # If no console object is provided, create a new one
+    if console is None:
+        console = Console()
+    
+    # Initialize the Table
+    table = Table(title="Invoices for all Customers")
+    
+    # Add columns
+    table.add_column("Customer Name", justify="left")
+    table.add_column("Contract ID", justify="right")
+    table.add_column("Segment ID", justify="right")
+    table.add_column("Invoice ID", justify="right")
+    table.add_column("Invoice Number", justify="left")
+    table.add_column("Invoice Date", justify="right")
+    table.add_column("Days Payable", justify="right")
+    table.add_column("Amount", justify="right")
+    
+    # Execute the SQL query to fetch data
+    with engine.connect() as conn:
+        result = conn.execute(text("""
+            SELECT c.Name, con.ContractID, s.SegmentID, i.InvoiceID, i.Number, i.Date, i.DaysPayable, i.Amount
+            FROM Invoices i
+            LEFT JOIN InvoiceSegments iseg ON i.InvoiceID = iseg.InvoiceID
+            LEFT JOIN Segments s ON iseg.SegmentID = s.SegmentID
+            LEFT JOIN Contracts con ON s.ContractID = con.ContractID
+            LEFT JOIN Customers c ON con.CustomerID = c.CustomerID;
+        """))
+        
+        # Fetch all rows
+        rows = result.fetchall()
+        
+        # Add rows to the Rich table
+        for row in rows:
+            customer_name, contract_id, segment_id, invoice_id, invoice_number, invoice_date, days_payable, amount = row
+            table.add_row(
+                customer_name,
+                str(contract_id),
+                str(segment_id),
+                str(invoice_id),
+                invoice_number,
+                str(invoice_date),
+                str(days_payable),
+                f"{amount:.2f}"
+            )
+            
+    # Print the table to the console
+    console.print(table)
     
     
 # Dataframe display functions   

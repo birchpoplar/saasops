@@ -10,12 +10,12 @@ from pptx.util import Inches, Pt
 
 # Extract and store database data in Excel workbook
 
-def export_data_to_xlsx(conn, start_date, end_date):
-    df_customers = database.fetch_data_from_db(conn, 'customers')
-    df_contracts = database.fetch_data_from_db(conn, 'contracts')
-    df_segments = database.fetch_data_from_db(conn, 'segments')
-    df_invoicesegments = database.fetch_data_from_db(conn, 'invoicesegments')
-    df_invoices = database.fetch_data_from_db(conn, 'invoices')
+def export_data_to_xlsx(engine, start_date, end_date):
+    df_customers = database.fetch_data_from_db(engine, 'customers')
+    df_contracts = database.fetch_data_from_db(engine, 'contracts')
+    df_segments = database.fetch_data_from_db(engine, 'segments')
+    df_invoicesegments = database.fetch_data_from_db(engine, 'invoicesegments')
+    df_invoices = database.fetch_data_from_db(engine, 'invoices')
 
     print(f"Exporting data to Excel workbook...")
     print(f"  - Customers: {len(df_customers)} rows")
@@ -34,9 +34,12 @@ def export_data_to_xlsx(conn, start_date, end_date):
     df_contracts = pd.merge(df_contracts, df_customers[['customerid', 'name']], on='customerid', how='left')
     df_contracts.drop('customerid', axis=1, inplace=True)
 
-    df_revenue = calc.populate_revenue_df(start_date, end_date, conn)
-    df_metrics = calc.populate_metrics_df(start_date, end_date, conn)
-    df_carrarr = calc.populate_bkings_carr_arr_df(start_date, end_date, conn)
+    df_revenue = calc.populate_revenue_df(start_date, end_date, "mid", engine)
+    df_metrics = calc.populate_metrics_df(start_date, end_date, engine)
+    df_carrarr = calc.populate_bkings_carr_arr_df(start_date, end_date, engine)
+
+    df_arr = calc.customer_arr_df(end_date, engine)
+    df_carr = calc.customer_carr_df(end_date, engine)
     
     # Create a Pandas Excel writer using XlsxWriter as the engine.
     with pd.ExcelWriter('exports/data.xlsx', engine='xlsxwriter') as writer:
@@ -46,6 +49,8 @@ def export_data_to_xlsx(conn, start_date, end_date):
         df_revenue.to_excel(writer, sheet_name='revenue', index=True)
         df_metrics.to_excel(writer, sheet_name='metrics', index=True)
         df_carrarr.to_excel(writer, sheet_name='carrarr', index=True)
+        df_arr.to_excel(writer, sheet_name='arr', index=True)
+        df_carr.to_excel(writer, sheet_name='carr', index=True)
 
 def export_data_to_pptx(engine, start_date, end_date):
     df_customers = database.fetch_data_from_db(engine, 'customers')
@@ -94,7 +99,7 @@ def export_data_to_pptx(engine, start_date, end_date):
 
     for slide_data in chart_slides_data:
         add_chart_slide(prs, slide_data["title"], slide_data["image_path"])
-
+        
     prs.save("exports/data_export.pptx")
 
     
@@ -106,3 +111,6 @@ def add_chart_slide(prs, slide_title, image_path):
     top = Inches(1.5)
     height = Inches(5)
     pic = slide.shapes.add_picture(image_path, left, top, height=height)
+
+    
+       

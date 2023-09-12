@@ -20,6 +20,9 @@ def connect_database(console: Console):
 
     # Create the connection string
     engine = create_engine(f"postgresql://{db_user}:{db_password}@{db_host}/{db_name}")
+    # Tried the sqlite, but got OperationalError: (sqlite3.OperationalError) cannot commit transaction - SQL statements in progress
+    # And looks like might be SQL-related, not bothering to debug
+    # engine = create_engine(f"sqlite:///data/test.db")
     
     utils.print_status(console, "Database opened successfully", MessageStyle.SUCCESS)
 
@@ -78,12 +81,12 @@ def update_customer(engine, customer_id, field, value):
 
 # Contract functions
         
-def add_contract(engine, customer_id, renewal_id, reference, contract_date, term_start_date, term_end_date, total_value): 
+def add_contract(engine, customer_id, reference, contract_date, term_start_date, term_end_date, total_value, renewal_id=None): 
     with engine.begin() as conn:
-        query = text("""INSERT INTO Contracts (CustomerID, RenewalFromID, Reference, ContractDate, TermStartDate, TermEndDate, TotalValue) VALUES (:CustomerID, :RenewalFromID, :Reference, :ContractDate, :TermStartDate, :TermEndDate, :TotalValue) RETURNING ContractID;""")
+        query = text("""INSERT INTO Contracts (CustomerID, RenewalFromContractID, Reference, ContractDate, TermStartDate, TermEndDate, TotalValue) VALUES (:CustomerID, :RenewalFromContractID, :Reference, :ContractDate, :TermStartDate, :TermEndDate, :TotalValue) RETURNING ContractID;""")
         params = {
             "CustomerID": customer_id,
-            "RenewalFromID": renewal_id,
+            "RenewalFromContractID": renewal_id if renewal_id is not None else None,
             "Reference": reference,
             "ContractDate": contract_date,
             "TermStartDate": term_start_date,
@@ -168,3 +171,72 @@ def update_segment(engine, segment_id, field, value):
             return "No rows updated. The specified SegmentID may not exist."
         else:
             return f"{result.rowcount} row(s) updated. Segment with SegmentID {segment_id} was successfully updated."
+
+# Invoice functions
+
+def add_invoice(engine, number, date, dayspayable, amount):
+    with engine.begin() as conn:
+        query = text("""INSERT INTO Invoices (Number, Date, DaysPayable, Amount) VALUES (:Number, :Date, :DaysPayable, :Amount) RETURNING InvoiceID;""")
+        params = {
+            "Number": number,
+            "Date": date,
+            "DaysPayable": dayspayable,
+            "Amount": amount
+        }
+        result = conn.execute(query, params)
+        if result.rowcount == 0:
+            return "No rows added."
+        else:
+            return f"{result.rowcount} row(s) added. InvoiceID {result.fetchone()[0]} was successfully added."
+
+def delete_invoice(engine, invoice_id):
+    with engine.begin() as conn:
+        query = text("""DELETE FROM Invoices WHERE InvoiceID = :InvoiceID;""")
+        params = {
+            "InvoiceID": invoice_id
+        }
+        result = conn.execute(query, params)
+        if result.rowcount == 0:
+            return "No rows deleted. The specified InvoiceID may not exist."
+        else:
+            return f"{result.rowcount} row(s) deleted. Invoice with InvoiceID {invoice_id} was successfully deleted."
+
+def update_invoice(engine, invoice_id, field, value):
+    with engine.begin() as conn:
+        query = text(f"""UPDATE Invoices SET {field} = :Value WHERE InvoiceID = :InvoiceID;""")
+        params = {
+            "InvoiceID": invoice_id,
+            "Value": value
+        }
+        result = conn.execute(query, params)
+        if result.rowcount == 0:
+            return "No rows updated. The specified InvoiceID may not exist."
+        else:
+            return f"{result.rowcount} row(s) updated. Invoice with InvoiceID {invoice_id} was successfully updated."
+
+# Invoice-Segment functions
+
+def add_invoice_to_segment_mapping(engine, invoice_id, segment_id):
+    with engine.begin() as conn:
+        query = text("""INSERT INTO InvoiceSegmentMapping (InvoiceID, SegmentID) VALUES (:InvoiceID, :SegmentID);""")
+        params = {
+            "InvoiceID": invoice_id,
+            "SegmentID": segment_id
+        }
+        result = conn.execute(query, params)
+        if result.rowcount == 0:
+            return "No rows added."
+        else:
+            return f"{result.rowcount} row(s) added. InvoiceID {invoice_id} was successfully added to SegmentID {segment_id}."
+
+def delete_invoice_to_segment_mapping(engine, invoicesegment_id):
+    with engine.begin() as conn:
+        query = text("""DELETE FROM InvoiceSegmentMapping WHERE InvoiceSegmentID = :InvoiceSegmentID;""")
+        params = {
+            "InvoiceSegmentID": invoicesegment_id
+        }
+        result = conn.execute(query, params)
+        if result.rowcount == 0:
+            return "No rows deleted. The specified InvoiceSegmentID may not exist."
+        else:
+            return f"{result.rowcount} row(s) deleted. InvoiceSegmentID {invoicesegment_id} was successfully deleted."

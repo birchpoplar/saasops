@@ -4,11 +4,11 @@ Track Customers, Contracts, Revenue Segments and Invoices for SaaS finance admin
 
 ## Setting up Postgres DB
 
-Log into psql:
+Log into psql as admin user:
 
 - CREATE DATABASE dbname;
 - CREATE USER user WITH PASSWORD 'password';
-- GRANT ALL PRIVILEGES ON DATABASE dbame TO user;
+- GRANT ALL PRIVILEGES ON DATABASE dbname TO user;
 
 Edit the .dir-locals.el file:
 

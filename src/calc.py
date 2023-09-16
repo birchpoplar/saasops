@@ -9,7 +9,7 @@ import pandas as pd
 import logging
 import calendar
 
-def populate_bkings_carr_arr_df(start_date, end_date, engine):
+def populate_bkings_carr_arr_df(start_date, end_date, engine, customer=None, contract=None):
     """Generate a DataFrame with Bookings, ARR and CARR for each month. NOTE: the day of the month on each of start_date and end_date is ignored in the creation of date_list that has end of month days only."""
 
     # Generate list of dates
@@ -30,12 +30,20 @@ def populate_bkings_carr_arr_df(start_date, end_date, engine):
     with engine.begin() as conn:
         for date in date_list:
 
+            # define a common WHERE clause for customer and contract
+            where_clause = ''
+            if customer:
+                where_clause += f" AND c.CustomerID = {customer} "
+            if contract:
+                where_clause += f" AND c.ContractID = {contract} "
+            
             # Calculate Bookings
             som_date = date.replace(day=1)  # Start-of-month date
             bookings_sql = text(
                 f"SELECT SUM(c.TotalValue) "
                 f"FROM Contracts c "
                 f"WHERE c.ContractDate::DATE BETWEEN '{som_date}'::DATE AND '{date}'::DATE"
+                + where_clause
             )
             bookings_result = conn.execute(bookings_sql, {'som_date': som_date, 'eom_date': date}).fetchone()
             bookings_value = bookings_result[0] if bookings_result[0] is not None else 0
@@ -48,6 +56,7 @@ def populate_bkings_carr_arr_df(start_date, end_date, engine):
                 f"JOIN Contracts c ON s.ContractID = c.ContractID "
                 f"WHERE s.Type = 'Subscription' "
                 f"AND '{date}'::DATE BETWEEN c.TermStartDate::DATE AND s.SegmentEndDate::DATE"
+                + where_clause
             )
         
             # Execute ARR SQL
@@ -63,7 +72,7 @@ def populate_bkings_carr_arr_df(start_date, end_date, engine):
                 f"  WHERE RenewalFromContractID IS NOT NULL"
                 f"), "
                 f"ValidContracts AS ("
-                f"  SELECT c.ContractID "
+                f"  SELECT c.ContractID, c.CustomerID "
                 f"  FROM Contracts c "
                 f"  LEFT JOIN Segments s ON c.ContractID = s.ContractID "
                 f"  LEFT JOIN RenewedContracts r ON c.ContractID = r.RenewalFromContractID "
@@ -74,6 +83,7 @@ def populate_bkings_carr_arr_df(start_date, end_date, engine):
                 f"FROM Segments s "
                 f"JOIN ValidContracts vc ON s.ContractID = vc.ContractID "
                 f"WHERE s.Type = 'Subscription'"
+                + where_clause.replace('c.', 'vc.')
             )
             
             carr_result = conn.execute(carr_sql, {'date': date}).fetchone()
@@ -83,9 +93,9 @@ def populate_bkings_carr_arr_df(start_date, end_date, engine):
     return df
 
 
-def populate_revenue_df(start_date, end_date, type, engine):
+def populate_revenue_df(start_date, end_date, type, engine, customer=None, contract=None):
     """Populate a DataFrame with active revenue for each customer in each month. The days of the month on each of start_date and end_date are ignored in the creation of date_list that has middle or end of month days only, depending on the string value of type."""
-    
+
     # Generate list of dates
     date_list = []
     current_date = start_date
@@ -111,14 +121,17 @@ def populate_revenue_df(start_date, end_date, type, engine):
     
     # Retrieve unique customer names from the Customers table
     with engine.begin() as conn:
-        customer_names_sql = text("SELECT DISTINCT Name FROM Customers")
-        customer_names_result = conn.execute(customer_names_sql)
+        customer_names_str = ("SELECT DISTINCT Name FROM Customers")
+        if customer is not None:
+            customer_names_str += f" WHERE CustomerID = '{customer}'"
+
+        customer_names_result = conn.execute(text(customer_names_str))
         customer_names = [row[0] for row in customer_names_result.fetchall()]
         
         # Populate DataFrame with active revenue
         for d in date_list:
             for customer in customer_names:
-                query = text(
+                query_str = (
                     f"SELECT SUM(s.SegmentValue) / 12 "
                     f"FROM Segments s "
                     f"JOIN Contracts c ON s.ContractID = c.ContractID "
@@ -127,6 +140,12 @@ def populate_revenue_df(start_date, end_date, type, engine):
                     f"AND cu.Name = '{customer}'"
                     f"AND s.Type = 'Subscription'"
                 )
+
+                # Add contract filter if specified
+                if contract is not None:
+                    query_str += f"AND c.ContractID = '{contract}'"
+
+                query = text(query_str)                    
                 active_revenue_result = conn.execute(query)
                 active_revenue = active_revenue_result.fetchone()[0]
                 
@@ -137,11 +156,11 @@ def populate_revenue_df(start_date, end_date, type, engine):
 
     return df
 
-def populate_metrics_df(start_date, end_date, engine):
+def populate_metrics_df(start_date, end_date, engine, customer=None, contract=None):
     """Populate a DataFrame with metrics for each month in the date range. Note that the days of the month on each of start_date and end_date are ignored in the creation of date_list that has end of month days only."""
     
     # Obtain the revenue DataFrame
-    revenue_df = populate_revenue_df(start_date, end_date, "end", engine)
+    revenue_df = populate_revenue_df(start_date, end_date, "end", engine, customer, contract)
     
     # Generate list of dates
     date_list = []
@@ -153,13 +172,13 @@ def populate_metrics_df(start_date, end_date, engine):
         date_list.append(eom_date)
         
         # Add one month to get the next start_date
-        current_date = eom_date + rd.relativedelta(days=1)
-    
+        current_date = eom_date + rd.relativedelta(days=1)    
 
     with engine.begin() as conn:
-        # Retrieve unique customer names from the Customers table
-        customer_names_sql = text("SELECT DISTINCT Name FROM Customers")
-        customer_names_result = conn.execute(customer_names_sql)
+        customer_names_str = ("SELECT DISTINCT Name FROM Customers")
+        if customer is not None:
+            customer_names_str += f" WHERE CustomerID = '{customer}'"
+        customer_names_result = conn.execute(text(customer_names_str))
         customer_names = [row[0] for row in customer_names_result.fetchall()]
 
     # Create a second DataFrame for metrics
@@ -167,7 +186,7 @@ def populate_metrics_df(start_date, end_date, engine):
    
     # Find the starting MRR figure
     prior_month_date = date_list[0] - rd.relativedelta(months=1)
-    prior_month_revenue_df = populate_revenue_df(prior_month_date, prior_month_date, "end", engine)
+    prior_month_revenue_df = populate_revenue_df(prior_month_date, prior_month_date, "end", engine, customer, contract)
     prior_month_date = prior_month_revenue_df.index[0]
      
     # Calculate and populate metrics for the second DataFrame

@@ -31,6 +31,11 @@ Then open the create_tables.sql file, and hit y to load the directory local vari
 
 ## TODOs
 
+- Move into a docker container for install
+- provide easy selection between databases (for multiple clients)
+- make status updates consistent and more descriptive on what is going on behind calcs
+- add in the docstrings for the typer commands
+
 1. add in color selection for charts with config load
 2. add first pytests with input dataframes/DB and output revenue/metrics
 3. finish off typer command definitions plus docstrings

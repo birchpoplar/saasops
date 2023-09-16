@@ -20,14 +20,14 @@ def round_up_to_base(x, base=5000):
     return base * math.ceil(x / base)
 
 
-def ttm_ndr_gdr_chart(conn, target_date):
+def ttm_ndr_gdr_chart(engine, target_date, customer=None, contract=None):
 
     # Calculate trailing 12-month values for a given date (e.g., 2023-06-15)
     start_date = pd.to_datetime(target_date) - pd.DateOffset(months=11)
     end_date = pd.to_datetime(target_date)
 
     # Source the appropriate dataframes for the metrics calcs
-    metrics_df = calc.populate_metrics_df(start_date, end_date, conn)
+    metrics_df = calc.populate_metrics_df(start_date, end_date, engine, customer, contract)
     
     date_list = metrics_df.index.strftime('%Y-%m-%d').tolist()
     
@@ -133,8 +133,8 @@ def ttm_ndr_gdr_chart(conn, target_date):
     plt.savefig("exports/trailing_12_month_values.png", dpi=300)
 
 
-def create_mrr_change_chart(conn, start_date, end_date):
-    metrics_df = calc.populate_metrics_df(start_date, end_date, conn)
+def create_mrr_change_chart(engine, start_date, end_date, customer=None, contract=None):
+    metrics_df = calc.populate_metrics_df(start_date, end_date, engine, customer, contract)
 
     # Convert the index to DateTimeIndex if it's not already
     if not isinstance(metrics_df.index, pd.DatetimeIndex):
@@ -198,8 +198,8 @@ def create_mrr_change_chart(conn, start_date, end_date):
     plt.savefig("exports/mrr_change.png", dpi=300)
 
 
-def create_monthly_mrr_chart(conn, start_date, end_date):
-    metrics_df = calc.populate_metrics_df(start_date, end_date, conn)
+def create_monthly_mrr_chart(engine, start_date, end_date, customer=None, contract=None):
+    metrics_df = calc.populate_metrics_df(start_date, end_date, engine, customer, contract)
 
     # Convert the index to DateTimeIndex if it's not already
     if not isinstance(metrics_df.index, pd.DatetimeIndex):
@@ -263,9 +263,9 @@ def create_monthly_mrr_chart(conn, start_date, end_date):
     plt.savefig("exports/monthly_mrr.png", dpi=300)
 
 
-def create_bookings_arr_carr_chart(conn, start_date, end_date):
+def create_bookings_arr_carr_chart(engine, start_date, end_date, customer=None, contract=None):
 
-    df = calc.populate_bkings_carr_arr_df(start_date, end_date, conn)
+    df = calc.populate_bkings_carr_arr_df(start_date, end_date, engine, customer, contract)
     
     # Convert the index to DateTimeIndex if it's not already
     if not isinstance(df.index, pd.DatetimeIndex):

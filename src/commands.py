@@ -151,31 +151,57 @@ def delinvseg(invoice_segment_id: int):
 # Calculation commands
 
 @cli_app.command()
-def bkingsdf(start_date: str, end_date: str):
+def bkingsdf(start_date: str, end_date: str, customer: Optional[int]=None, contract: Optional[int]=None):
     console = Console()
     engine = database.connect_database(console)
     start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
     end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
-    df = calc.populate_bkings_carr_arr_df(start_date, end_date, engine)
-    display.print_dataframe(df, 'Bookings, ARR and CARR', console)
+    df = calc.populate_bkings_carr_arr_df(start_date, end_date, engine, customer, contract)
+    df_title = f'Bookings, ARR and CARR, {start_date} to {end_date}'
+    if customer:
+        df_title += f', customer: {customer}'
+    if contract:
+        df_title += f', contract: {contract}'
+    display.print_dataframe(df, df_title, console)
 
 @cli_app.command()
-def revdf(start_date: str, end_date: str, type: str):
+def revdf(
+        start_date: str,
+        end_date: str,
+        type: str,
+        customer: Optional[int]=None,
+        contract: Optional[int]=None
+):
     console = Console()
     engine = database.connect_database(console)
     start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
     end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
-    df = calc.populate_revenue_df(start_date, end_date, type, engine)
-    display.print_dataframe(df, f'Revenue, type: {type}-month', console)
+    df = calc.populate_revenue_df(start_date, end_date, type, engine, customer, contract)
+    df_title = f'Revenue, {start_date} to {end_date}, type: {type}-month'
+    if customer:
+        df_title += f', customer: {customer}'
+    if contract:
+        df_title += f', contract: {contract}'
+    display.print_dataframe(df, df_title, console)
 
 @cli_app.command()
-def metricsdf(start_date: str, end_date: str):
+def metricsdf(
+        start_date: str,
+        end_date: str,
+        customer: Optional[int]=None,
+        contract: Optional[int]=None
+):
     console = Console()
     engine = database.connect_database(console)
     start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
     end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
-    df = calc.populate_metrics_df(start_date, end_date, engine)
-    display.print_dataframe(df, 'Metrics', console)
+    df = calc.populate_metrics_df(start_date, end_date, engine, customer, contract)
+    df_title = f'Metrics, {start_date} to {end_date}'
+    if customer:
+        df_title += f', customer: {customer}'
+    if contract:
+        df_title += f', contract: {contract}'
+    display.print_dataframe(df, df_title, console)
 
 @cli_app.command()
 def arrdf(date: str):
@@ -216,3 +242,14 @@ def exportall(start_date: str, end_date: str):
     end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
     export.export_data_to_pptx(engine, start_date, end_date)
     export.export_data_to_xlsx(engine, start_date, end_date)
+
+@cli_app.command()
+def exportcharts(start_date: str, end_date: str, customer: Optional[int]=None, contract: Optional[int]=None):
+    """
+    Export all charts to image files.
+    """
+    console = Console()
+    engine = database.connect_database(console)
+    start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+    end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+    export.export_chart_images(engine, start_date, end_date, customer, contract)

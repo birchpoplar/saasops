@@ -109,7 +109,7 @@ def export_chart_images(engine, start_date, end_date, customer=None, contract=No
     visualization.create_monthly_mrr_chart(engine, start_date, end_date, customer, contract)
     visualization.ttm_ndr_gdr_chart(engine, end_date, customer, contract)
     visualization.create_bookings_arr_carr_chart(engine, start_date, end_date, customer, contract)
-    
+
 def add_chart_slide(prs, slide_title, image_path):
     slide = prs.slides.add_slide(prs.slide_layouts[23])
     title = slide.shapes.title

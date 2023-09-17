@@ -22,6 +22,18 @@ Edit the .dir-locals.el file:
 	
 Then open the create_tables.sql file, and hit y to load the directory local variables.
 
+## Template DB in Postgres for testing
+
+- CREATE USER testuser with PASSWORD 'testuser';
+- CREATE DATABASE template_test_db;
+- GRANT ALL PRIVILEGES ON DATABASE template_test_db TO testuser;
+- (in psql) ~\i create_tables.sql~
+- 
+- GRANT ALL PRIVILEGES ON DATABASE postgres TO testuser; (so can connect with an engine)
+- ALTER USER testuser CREATEDB; to create new DBs
+- ALTER DATABASE template_test_db OWNER TO testuser;
+
+
 ## SQL scripts
 
 - create_tables.sql = creates the table structures in the DB
@@ -35,6 +47,12 @@ Then open the create_tables.sql file, and hit y to load the directory local vari
 - provide easy selection between databases (for multiple clients)
 - make status updates consistent and more descriptive on what is going on behind calcs
 - add in the docstrings for the typer commands
+- make the app call the name only, not python + main.py
+- 
+
+MAJOR ONE: dealing with contracts that are not 12 months:
+- what contribution to ARR
+- how to recognize revenue (divide total by number of months
 
 1. add in color selection for charts with config load
 2. add first pytests with input dataframes/DB and output revenue/metrics

@@ -16,11 +16,10 @@ def test_populate_revenue_df_case1a(db_engine_case1):
 
     # Generate expected data
     first = [0]*5
-    second = [10000]*12
+    second = [10000.0]*12
     third = [0]*7
-    expected_revenue_data = [float("{:.1f}".format(x)) for x in first + second + third]
     expected_data_dict = {
-        'Test Customer': expected_revenue_data
+        'Test Customer': first + second + third
     }
     date_range = pd.date_range(start_date, end_date, freq='M')
     expected_df = pd.DataFrame(
@@ -32,7 +31,7 @@ def test_populate_revenue_df_case1a(db_engine_case1):
 
 def test_populate_revenue_df_case1b(db_engine_case1):
     # Test is for contract that starts 2022-06-01 and ends 2023-05-31
-    # This test is for end-month revenue
+    # This test is for mid-month revenue
     
     start_date = datetime.strptime('2022-01-01', '%Y-%m-%d').date()
     end_date = datetime.strptime('2023-12-31', '%Y-%m-%d').date()

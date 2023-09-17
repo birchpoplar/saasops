@@ -8,6 +8,8 @@ secure_*.sql
 # also the test images created
 *.png
 
+# exclude the exports folder
+exports/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

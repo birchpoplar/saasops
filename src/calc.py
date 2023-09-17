@@ -89,7 +89,9 @@ def populate_bkings_carr_arr_df(start_date, end_date, engine, customer=None, con
             carr_result = conn.execute(carr_sql, {'date': date}).fetchone()
             carr_value = carr_result[0] if carr_result[0] is not None else 0
             df.at[date, 'CARR'] = carr_value
-     
+
+    df = df.astype(float)
+    df = df.round(1)
     return df
 
 
@@ -154,6 +156,8 @@ def populate_revenue_df(start_date, end_date, type, engine, customer=None, contr
                     
                 df.at[d, customer] = active_revenue
 
+    df = df.astype(float)
+    df = df.round(1)
     return df
 
 def populate_metrics_df(start_date, end_date, engine, customer=None, contract=None):

@@ -251,6 +251,9 @@ def populate_metrics_df(start_date, end_date, engine, customer=None, contract=No
         logging.info(f"Starting MRR: {starting_mrr_sum}")
         logging.info(f"Ending MRR: {ending_mrr_sum}")
 
+
+    metrics_df = metrics_df.astype(float)
+    metrics_df = metrics_df.round(1)
     return metrics_df
 
 def customer_arr_df(date, engine):

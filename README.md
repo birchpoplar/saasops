@@ -53,10 +53,13 @@ Then open the create_tables.sql file, and hit y to load the directory local vari
 MAJOR ONE: dealing with contracts that are not 12 months:
 - what contribution to ARR
 - how to recognize revenue (divide total by number of months
+- need to solve this one next
+- perhaps needs annual equivalent
+- check the insight partners deck
 
 1. add in color selection for charts with config load
-2. add first pytests with input dataframes/DB and output revenue/metrics
 3. finish off typer command definitions plus docstrings
+4. add in two level command definition in typer
 4. build in database selection command/config (from CLI)
 5. sort out standard status update printlines for all functions (maybe Rich with horizontal lines etc.)
 6. build sanity check on segments/contracts - match total value and timeline, identify inconsistencies

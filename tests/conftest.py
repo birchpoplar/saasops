@@ -30,14 +30,25 @@ def populate_sample_data_case1(engine):
     print_status(console, "...populating sample data case 1", classes.MessageStyle.INFO)
     with open('tests/sample_data_case1.sql') as f:
         sql_stmts = f.read()
-
     with engine.begin() as connection:
         connection.execute(text(sql_stmts))
         
-    
 def populate_sample_data_case2(engine):
-    pass
+    console = Console()
+    print_status(console, "...populating sample data case 2", classes.MessageStyle.INFO)
+    with open('tests/sample_data_case2.sql') as f:
+        sql_stmts = f.read()
+    with engine.begin() as connection:
+        connection.execute(text(sql_stmts))
 
+def populate_sample_data_case3(engine):
+    console = Console()
+    print_status(console, "...populating sample data case 3", classes.MessageStyle.INFO)
+    with open('tests/sample_data_case3.sql') as f:
+        sql_stmts = f.read()
+    with engine.begin() as connection:
+        connection.execute(text(sql_stmts))
+        
 @pytest.fixture(scope="function")
 def base_db_engine():
     db_name = create_test_db()
@@ -54,4 +65,9 @@ def db_engine_case1(base_db_engine):
 @pytest.fixture
 def db_engine_case2(base_db_engine):
     populate_sample_data_case2(base_db_engine)
+    yield base_db_engine
+
+@pytest.fixture
+def db_engine_case3(base_db_engine):
+    populate_sample_data_case3(base_db_engine)
     yield base_db_engine

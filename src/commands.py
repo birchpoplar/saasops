@@ -4,11 +4,27 @@ from rich.console import Console
 from datetime import date, datetime
 from typing import Optional
 
-cli_app = Typer()
+app = Typer(name="saasops")
+
+customer_app = Typer(name="customer")
+contract_app = Typer(name="contract")
+segment_app = Typer(name="segment")
+invoice_app = Typer(name="invoice")
+invoicesegment_app = Typer(name="invoicesegment")
+calc_app = Typer(name="calc")
+export_app = Typer(name="export")
+
+app.add_typer(customer_app, name="customer")
+app.add_typer(contract_app, name="contract")
+app.add_typer(segment_app, name="segment")
+app.add_typer(invoice_app, name="invoice")
+app.add_typer(invoicesegment_app, name="invoicesegment")
+app.add_typer(calc_app, name="calc")
+app.add_typer(export_app, name="export")
 
 # Customer commands
     
-@cli_app.command()
+@customer_app.command("list")
 def listcust():
     """
     List all customers.
@@ -17,7 +33,7 @@ def listcust():
     engine = database.connect_database(console)
     display.print_customers(engine, console)
 
-@cli_app.command()
+@customer_app.command("add")
 def custadd(name: str, city: str, state: str):
     """
     Add a new customer.
@@ -26,7 +42,7 @@ def custadd(name: str, city: str, state: str):
     engine = database.connect_database(console)
     print(database.add_customer(engine, name, city, state))
 
-@cli_app.command()
+@customer_app.command("del")
 def custdel(customer_id: int):
     """
     Delete a customer.
@@ -35,7 +51,7 @@ def custdel(customer_id: int):
     engine = database.connect_database(console)
     print(database.delete_customer(engine, customer_id))
 
-@cli_app.command()
+@customer_app.command("update")
 def custupd(customer_id: int, field: str, value: str):
     """
     Update a customer record with new value.
@@ -46,37 +62,37 @@ def custupd(customer_id: int, field: str, value: str):
 
 # Contract commands
 
-@cli_app.command()
+@contract_app.command("list")
 def listcont():
     console = Console()
     engine = database.connect_database(console)
     display.print_contracts(engine, console)
 
-@cli_app.command()
+@contract_app.command("add")
 def contadd(customer_id: int, reference: str, contract_date: str, term_start_date: str, term_end_date: str, total_value: int, renewal_id: Optional[int]=None):
     console = Console()
     engine = database.connect_database(console)
     print(database.add_contract(engine, customer_id, reference, contract_date, term_start_date, term_end_date, total_value, renewal_id))
 
-@cli_app.command()
+@contract_app.command("del")
 def contdel(contract_id: int):
     console = Console()
     engine = database.connect_database(console)
     print(database.delete_contract(engine, contract_id))
 
-@cli_app.command()
+@contract_app.command("update")
 def contupd(contract_id: int, field: str, value: str):
     console = Console()
     engine = database.connect_database(console)
     print(database.update_contract(engine, contract_id, field, value))
 
-@cli_app.command()
+@contract_app.command("print")
 def prntcont(contract_id: int):
     console = Console()
     engine = database.connect_database(console)
     display.print_contract(engine, contract_id, console)
 
-@cli_app.command()
+@contract_app.command("print_customer")
 def prntcustcont(customer_id: int):
     console = Console()
     engine = database.connect_database(console)
@@ -84,31 +100,31 @@ def prntcustcont(customer_id: int):
     
 # Segment commands
 
-@cli_app.command()
+@segment_app.command("list")
 def listseg():
     console = Console()
     engine = database.connect_database(console)
     display.print_segments(engine, console)
 
-@cli_app.command()
+@segment_app.command("print")
 def prntseg(segment_id: int):
     console = Console()
     engine = database.connect_database(console)
     display.print_segment(engine, segment_id, console)
 
-@cli_app.command()
+@segment_app.command("add")
 def segadd(contract_id: int, segment_start_date: str, segment_end_date: str, title: str, type: str, segment_value: int):
     console = Console()
     engine = database.connect_database(console)
     print(database.add_segment(engine, contract_id, segment_start_date, segment_end_date, title, type, segment_value))
 
-@cli_app.command()
+@segment_app.command("del")
 def segdel(segment_id: int):
     console = Console()
     engine = database.connect_database(console)
     print(database.delete_segment(engine, segment_id))
 
-@cli_app.command()
+@segment_app.command("update")
 def segupd(segment_id: int, field: str, value: str):
     console = Console()
     engine = database.connect_database(console)
@@ -116,19 +132,19 @@ def segupd(segment_id: int, field: str, value: str):
 
 # Invoice commands
 
-@cli_app.command()
+@invoice_app.command("list")
 def listinv():
     console = Console()
     engine = database.connect_database(console)
     display.print_invoices(engine, console)
 
-@cli_app.command()
+@invoice_app.command("add")
 def invadd(number: str, date: str, dayspayable: int, amount: int):
     console = Console()
     engine = database.connect_database(console)
     print(database.add_invoice(engine, number, date, dayspayable, amount))
 
-@cli_app.command()
+@invoice_app.command("del")
 def invdel(invoice_id: int):
     console = Console()
     engine = database.connect_database(console)
@@ -136,13 +152,13 @@ def invdel(invoice_id: int):
 
 # Invoice Segment commands
 
-@cli_app.command()
+@invoicesegment_app.command("add")
 def addinvseg(invoice_id: int, segment_id: int):
     console = Console()
     engine = database.connect_database(console)
     print(database.add_invoice_to_segment_mapping(engine, invoice_id, segment_id))
 
-@cli_app.command()
+@invoicesegment_app.command("del")
 def delinvseg(invoice_segment_id: int):
     console = Console()
     engine = database.connect_database(console)
@@ -150,7 +166,7 @@ def delinvseg(invoice_segment_id: int):
     
 # Calculation commands
 
-@cli_app.command()
+@calc_app.command("bkings")
 def bkingsdf(start_date: str, end_date: str, customer: Optional[int]=None, contract: Optional[int]=None):
     console = Console()
     engine = database.connect_database(console)
@@ -164,7 +180,7 @@ def bkingsdf(start_date: str, end_date: str, customer: Optional[int]=None, contr
         df_title += f', contract: {contract}'
     display.print_dataframe(df, df_title, console)
 
-@cli_app.command()
+@calc_app.command("rev")
 def revdf(
         start_date: str,
         end_date: str,
@@ -184,7 +200,7 @@ def revdf(
         df_title += f', contract: {contract}'
     display.print_dataframe(df, df_title, console)
 
-@cli_app.command()
+@calc_app.command("metrics")
 def metricsdf(
         start_date: str,
         end_date: str,
@@ -203,7 +219,7 @@ def metricsdf(
         df_title += f', contract: {contract}'
     display.print_dataframe(df, df_title, console)
 
-@cli_app.command()
+@calc_app.command("arr")
 def arrdf(date: str):
     console = Console()
     engine = database.connect_database(console)
@@ -211,7 +227,7 @@ def arrdf(date: str):
     df = calc.customer_arr_df(date, engine)
     display.print_table(df, f'ARR at {date}', console)
 
-@cli_app.command()
+@calc_app.command("carr")
 def carrdf(date: str):
     console = Console()
     engine = database.connect_database(console)
@@ -219,7 +235,7 @@ def carrdf(date: str):
     df = calc.customer_carr_df(date, engine)
     display.print_table(df, f'CARR at {date}', console)
 
-@cli_app.command()
+@calc_app.command("metrics_customer")
 def custmetricsdf(start_date: str, end_date: str):
     console = Console()
     engine = database.connect_database(console)
@@ -231,7 +247,7 @@ def custmetricsdf(start_date: str, end_date: str):
     
 # Export commands 
 
-@cli_app.command()
+@export_app.command("all")
 def exportall(start_date: str, end_date: str):
     """
     Export all chart data to PowerPoint presentation and Excel workbook.
@@ -243,7 +259,7 @@ def exportall(start_date: str, end_date: str):
     export.export_data_to_pptx(engine, start_date, end_date)
     export.export_data_to_xlsx(engine, start_date, end_date)
 
-@cli_app.command()
+@export_app.command("charts")
 def exportcharts(start_date: str, end_date: str, customer: Optional[int]=None, contract: Optional[int]=None):
     """
     Export all charts to image files.

@@ -57,6 +57,12 @@ MAJOR ONE: dealing with contracts that are not 12 months:
 - perhaps needs annual equivalent
 - check the insight partners deck
 
+Notes on solution:
+- need override dates? or just assume that the entered dates are true or overridden - could add that audit trail stuff later, won't affect computation
+- then you'd need to calculate contract length
+- and effective annualized value
+
+
 1. add in color selection for charts with config load
 3. finish off typer command definitions plus docstrings
 4. add in two level command definition in typer

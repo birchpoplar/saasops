@@ -48,6 +48,14 @@ def populate_sample_data_case3(engine):
         sql_stmts = f.read()
     with engine.begin() as connection:
         connection.execute(text(sql_stmts))
+
+def populate_sample_data_case4(engine):
+    console = Console()
+    print_status(console, "...populating sample data case 4", classes.MessageStyle.INFO)
+    with open('tests/sample_data_case4.sql') as f:
+        sql_stmts = f.read()
+    with engine.begin() as connection:
+        connection.execute(text(sql_stmts))
         
 @pytest.fixture(scope="function")
 def base_db_engine():
@@ -70,4 +78,9 @@ def db_engine_case2(base_db_engine):
 @pytest.fixture
 def db_engine_case3(base_db_engine):
     populate_sample_data_case3(base_db_engine)
+    yield base_db_engine
+
+@pytest.fixture
+def db_engine_case4(base_db_engine):
+    populate_sample_data_case4(base_db_engine)
     yield base_db_engine

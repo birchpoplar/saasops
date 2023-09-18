@@ -51,7 +51,7 @@ def populate_bkings_carr_arr_df(start_date, end_date, engine, customer=None, con
 
             # Create the SQL query for ARR
             arr_sql = text(
-                f"SELECT SUM(s.SegmentValue) "
+                f"SELECT SUM(s.SegmentValue * (12 / ROUND(EXTRACT(EPOCH FROM AGE(s.SegmentEndDate, s.SegmentStartDate)) / 3600 / 24 / 30)))"
                 f"FROM Segments s "
                 f"JOIN Contracts c ON s.ContractID = c.ContractID "
                 f"WHERE s.Type = 'Subscription' "
@@ -79,7 +79,7 @@ def populate_bkings_carr_arr_df(start_date, end_date, engine, customer=None, con
                 f"  WHERE '{date}'::DATE <= COALESCE(r.ContractDate::DATE, '{date}'::DATE + 1) "
                 f"  AND '{date}'::DATE BETWEEN c.ContractDate::DATE AND s.SegmentEndDate::DATE "
                 f") "
-                f"SELECT SUM(s.SegmentValue) "
+                f"SELECT SUM(s.SegmentValue * (12 / ROUND(EXTRACT(EPOCH FROM AGE(s.SegmentEndDate, s.SegmentStartDate)) / 3600 / 24 / 30)))"
                 f"FROM Segments s "
                 f"JOIN ValidContracts vc ON s.ContractID = vc.ContractID "
                 f"WHERE s.Type = 'Subscription'"
@@ -134,7 +134,8 @@ def populate_revenue_df(start_date, end_date, type, engine, customer=None, contr
         for d in date_list:
             for customer in customer_names:
                 query_str = (
-                    f"SELECT SUM(s.SegmentValue) / 12 "
+                    f"SELECT SUM(s.SegmentValue / "
+                    f"ROUND(EXTRACT(EPOCH FROM AGE(s.SegmentEndDate, s.SegmentStartDate)) / 3600 / 24 / 30)) "
                     f"FROM Segments s "
                     f"JOIN Contracts c ON s.ContractID = c.ContractID "
                     f"JOIN Customers cu ON c.CustomerID = cu.CustomerID "

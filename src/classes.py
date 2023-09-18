@@ -1,7 +1,7 @@
 from enum import Enum
 
 class MessageStyle(Enum):
-    INFO = "gray"
+    INFO = "blue"
     SUCCESS = "green"
     ERROR = "red"
 

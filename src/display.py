@@ -6,6 +6,8 @@ from rich.table import Table
 from datetime import datetime
 import pandas as pd
 from sqlalchemy import text
+from src.utils import print_status
+from src.classes import MessageStyle
 
 from src import classes, database, calc
 
@@ -26,6 +28,7 @@ def print_customers(engine, console=None):
     table.add_column("City", justify="left")
     table.add_column("State", justify="left")
     
+    print_status(console, "... accessing database", MessageStyle.INFO)
     with engine.connect() as conn:
         # Execute the SQL query to fetch data
         result = conn.execute(text("SELECT * FROM Customers;"))
@@ -34,6 +37,7 @@ def print_customers(engine, console=None):
         rows = result.fetchall()
     
     # Add rows to the Rich table
+    print_status(console, "... compiling customer table", MessageStyle.INFO)
     for row in rows:
         customer_id, name, city, state = row
         table.add_row(str(customer_id), name, city, state)

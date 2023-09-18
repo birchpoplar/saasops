@@ -24,7 +24,7 @@ def connect_database(console: Console):
     # And looks like might be SQL-related, not bothering to debug
     # engine = create_engine(f"sqlite:///data/test.db")
     
-    utils.print_status(console, "Database opened successfully", MessageStyle.SUCCESS)
+    utils.print_status(console, "... database opened successfully", MessageStyle.SUCCESS)
 
     return engine
 

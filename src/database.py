@@ -7,6 +7,7 @@ from src import utils
 from rich.console import Console
 import textwrap
 import pandas as pd
+from src.utils import print_status
 
 # Database functions
 
@@ -14,10 +15,16 @@ def connect_database(console: Console):
 
     # Get database credentials from environment variables
     db_host = os.environ.get("DB_HOST")
-    db_name = os.environ.get("DB_NAME")
     db_user = os.environ.get("DB_USER")
     db_password = os.environ.get("DB_PASSWORD")
 
+    if os.environ.get("DB_NAME") is None:
+        print_status(console, "No database name provided. Please provide a database name in the DB_NAME environment variable.", MessageStyle.ERROR)
+        exit(1)
+    else:
+        print_status(console, f"Database name: {os.environ.get('DB_NAME')}", MessageStyle.INFO)
+        db_name = os.environ.get("DB_NAME")
+    
     # Create the connection string
     engine = create_engine(f"postgresql://{db_user}:{db_password}@{db_host}/{db_name}")
     # Tried the sqlite, but got OperationalError: (sqlite3.OperationalError) cannot commit transaction - SQL statements in progress
@@ -127,8 +134,6 @@ def update_contract(engine, contract_id, field, value):
             return f"{result.rowcount} row(s) updated. Contract with ContractID {contract_id} was successfully updated."
 
 # Segment functions
-
-
 
 def add_segment(engine, contract_id, segment_start_date, segment_end_date, title, type, segment_value):
     with engine.begin() as conn:

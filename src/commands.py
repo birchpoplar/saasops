@@ -6,13 +6,13 @@ from typing import Optional
 
 app = Typer(name="saasops")
 
-customer_app = Typer(name="customer")
-contract_app = Typer(name="contract")
-segment_app = Typer(name="segment")
-invoice_app = Typer(name="invoice")
-invoicesegment_app = Typer(name="invoicesegment")
-calc_app = Typer(name="calc")
-export_app = Typer(name="export")
+customer_app = Typer(name="customer", help="Manage customers")
+contract_app = Typer(name="contract", help="Manage contracts")
+segment_app = Typer(name="segment", help="Manage segments")
+invoice_app = Typer(name="invoice", help="Manage invoices")
+invoicesegment_app = Typer(name="invoicesegment", help="Map invoices to segments")
+calc_app = Typer(name="calc", help="Calculate output data and metrics")
+export_app = Typer(name="export", help="Export data to various file type")
 
 app.add_typer(customer_app, name="customer")
 app.add_typer(contract_app, name="contract")
@@ -21,6 +21,15 @@ app.add_typer(invoice_app, name="invoice")
 app.add_typer(invoicesegment_app, name="invoicesegment")
 app.add_typer(calc_app, name="calc")
 app.add_typer(export_app, name="export")
+
+# Database selection commands
+
+@app.command()
+def set_db(db_name: str):
+    """
+    Set the database to use.
+    """
+    os.environ["DB_NAME"] = db_name
 
 # Customer commands
     
@@ -64,68 +73,92 @@ def custupd(customer_id: int, field: str, value: str):
 
 @contract_app.command("list")
 def listcont():
+    """
+    List all contracts.
+    """
     console = Console()
     engine = database.connect_database(console)
     display.print_contracts(engine, console)
 
 @contract_app.command("add")
 def contadd(customer_id: int, reference: str, contract_date: str, term_start_date: str, term_end_date: str, total_value: int, renewal_id: Optional[int]=None):
+    """
+    Add a new contract.
+    """
     console = Console()
     engine = database.connect_database(console)
     print(database.add_contract(engine, customer_id, reference, contract_date, term_start_date, term_end_date, total_value, renewal_id))
 
 @contract_app.command("del")
 def contdel(contract_id: int):
+    """
+    Delete a contract.
+    """
     console = Console()
     engine = database.connect_database(console)
     print(database.delete_contract(engine, contract_id))
 
 @contract_app.command("update")
 def contupd(contract_id: int, field: str, value: str):
+    """
+    Update a contract record with new value.
+    """
     console = Console()
     engine = database.connect_database(console)
     print(database.update_contract(engine, contract_id, field, value))
 
 @contract_app.command("print")
 def prntcont(contract_id: int):
+    """
+    Print details of a contract.
+    """
     console = Console()
     engine = database.connect_database(console)
     display.print_contract(engine, contract_id, console)
 
-@contract_app.command("print_customer")
-def prntcustcont(customer_id: int):
-    console = Console()
-    engine = database.connect_database(console)
-    display.print_customer_contracts(engine, customer_id, console)
-    
 # Segment commands
 
 @segment_app.command("list")
 def listseg():
+    """
+    List all segments.
+    """
     console = Console()
     engine = database.connect_database(console)
     display.print_segments(engine, console)
 
 @segment_app.command("print")
 def prntseg(segment_id: int):
+    """
+    Print details of a segment.
+    """
     console = Console()
     engine = database.connect_database(console)
     display.print_segment(engine, segment_id, console)
 
 @segment_app.command("add")
 def segadd(contract_id: int, segment_start_date: str, segment_end_date: str, title: str, type: str, segment_value: int):
+    """
+    Add a new segment.
+    """
     console = Console()
     engine = database.connect_database(console)
     print(database.add_segment(engine, contract_id, segment_start_date, segment_end_date, title, type, segment_value))
 
 @segment_app.command("del")
 def segdel(segment_id: int):
+    """
+    Delete a segment.
+    """
     console = Console()
     engine = database.connect_database(console)
     print(database.delete_segment(engine, segment_id))
 
 @segment_app.command("update")
 def segupd(segment_id: int, field: str, value: str):
+    """
+    Update a segment record with new value.
+    """
     console = Console()
     engine = database.connect_database(console)
     print(database.update_segment(engine, segment_id, field, value))
@@ -134,18 +167,27 @@ def segupd(segment_id: int, field: str, value: str):
 
 @invoice_app.command("list")
 def listinv():
+    """
+    List all invoices.
+    """
     console = Console()
     engine = database.connect_database(console)
     display.print_invoices(engine, console)
 
 @invoice_app.command("add")
 def invadd(number: str, date: str, dayspayable: int, amount: int):
+    """
+    Add a new invoice.
+    """
     console = Console()
     engine = database.connect_database(console)
     print(database.add_invoice(engine, number, date, dayspayable, amount))
 
 @invoice_app.command("del")
 def invdel(invoice_id: int):
+    """
+    Delete an invoice.
+    """
     console = Console()
     engine = database.connect_database(console)
     print(database.delete_invoice(engine, invoice_id))
@@ -154,12 +196,18 @@ def invdel(invoice_id: int):
 
 @invoicesegment_app.command("add")
 def addinvseg(invoice_id: int, segment_id: int):
+    """
+    Add a new invoice segment mapping.
+    """
     console = Console()
     engine = database.connect_database(console)
     print(database.add_invoice_to_segment_mapping(engine, invoice_id, segment_id))
 
 @invoicesegment_app.command("del")
 def delinvseg(invoice_segment_id: int):
+    """
+    Delete an invoice segment mapping.
+    """
     console = Console()
     engine = database.connect_database(console)
     print(database.delete_invoice_to_segment_mapping(engine, invoice_segment_id))
@@ -168,6 +216,9 @@ def delinvseg(invoice_segment_id: int):
 
 @calc_app.command("bkings")
 def bkingsdf(start_date: str, end_date: str, customer: Optional[int]=None, contract: Optional[int]=None):
+    """
+    Print bookings, CARR and ARR dataframe.
+    """
     console = Console()
     engine = database.connect_database(console)
     start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
@@ -188,6 +239,9 @@ def revdf(
         customer: Optional[int]=None,
         contract: Optional[int]=None
 ):
+    """
+    Print revenue dataframe.
+    """
     console = Console()
     engine = database.connect_database(console)
     start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
@@ -207,6 +261,9 @@ def metricsdf(
         customer: Optional[int]=None,
         contract: Optional[int]=None
 ):
+    """
+    Print metrics dataframe.
+    """
     console = Console()
     engine = database.connect_database(console)
     start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
@@ -221,6 +278,9 @@ def metricsdf(
 
 @calc_app.command("arr")
 def arrdf(date: str):
+    """
+    Print ARR table for specific date.
+    """
     console = Console()
     engine = database.connect_database(console)
     date = datetime.strptime(date, '%Y-%m-%d').date()
@@ -229,22 +289,15 @@ def arrdf(date: str):
 
 @calc_app.command("carr")
 def carrdf(date: str):
+    """
+    Print CARR table for specific date.
+    """
     console = Console()
     engine = database.connect_database(console)
     date = datetime.strptime(date, '%Y-%m-%d').date()
     df = calc.customer_carr_df(date, engine)
     display.print_table(df, f'CARR at {date}', console)
-
-@calc_app.command("metrics_customer")
-def custmetricsdf(start_date: str, end_date: str):
-    console = Console()
-    engine = database.connect_database(console)
-    start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
-    end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
-    df = calc.populate_customer_metrics_df(start_date, end_date, engine)
-    print(df)
-    # display.print_dataframe(df, 'Customer metrics', console)
-    
+ 
 # Export commands 
 
 @export_app.command("all")

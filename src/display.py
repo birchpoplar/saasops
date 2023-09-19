@@ -205,51 +205,7 @@ def print_contracts(engine, console=None):
         
     # Print the table to the console
     console.print(table)
-
     
-def print_customer_contracts(engine, customer_id, console=None):
-
-    # If no console object is provided, create a new one
-    if console is None:
-        console = Console()
-    
-    # Initialize the Table
-    table = Table(title=f"Contracts for Customer ID {customer_id}")
-    
-    # Add columns
-    table.add_column("Contract ID", justify="right")
-    table.add_column("Customer ID", justify="right")
-    table.add_column("Renewal ID", justify="right")
-    table.add_column("Reference", justify="left")
-    table.add_column("Contract Date", justify="right")
-    table.add_column("Term Start Date", justify="right")
-    table.add_column("Term End Date", justify="right")
-    table.add_column("Total Value", justify="right")
-    
-    # Execute the SQL query to fetch data
-    with engine.connect() as conn:
-        result = conn.execute(text("SELECT * FROM Contracts WHERE CustomerID = :customer_id;"), {"customer_id": customer_id})
-
-    # Fetch all rows
-    rows = result.fetchall()
-    
-    # Add rows to the Rich table
-    for row in rows:
-        contract_id, customer_id, renewal_from_contract_id, reference, contract_date, term_start_date, term_end_date, total_value = row
-        table.add_row(
-            str(contract_id), 
-            str(customer_id), 
-            str(renewal_from_contract_id) if renewal_from_contract_id else 'N/A', 
-            reference, 
-            str(contract_date), 
-            str(term_start_date), 
-            str(term_end_date), 
-            f"{total_value:.2f}"
-        )
-        
-    # Print the table to the console
-    console.print(table)
-
     
 def print_invoices(engine, console=None):
     # If no console object is provided, create a new one

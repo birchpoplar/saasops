@@ -6,4 +6,4 @@ from rich.text import Text
 
 def print_status(console: Console, message: str, style: classes.MessageStyle) -> None:
     """Print a status message with the specified style."""
-    console.print(Text(message, style=style.value))
+    console.print(message, markup=True, style=style.value)

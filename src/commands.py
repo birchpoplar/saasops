@@ -1,8 +1,9 @@
 from src import database, display, export, calc
 from typer import Typer
 from rich.console import Console
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from typing import Optional
+import calendar
 
 app = Typer(name="saasops")
 
@@ -247,6 +248,14 @@ def revdf(
     start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
     end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
     df = calc.populate_revenue_df(start_date, end_date, type, engine, customer, contract)
+    _, last_day_start = calendar.monthrange(start_date.year, start_date.month)
+    _, last_day_end = calendar.monthrange(end_date.year, end_date.month)
+    if type == 'mid':
+        start_date = start_date.replace(day=15)
+        end_date = end_date.replace(day=15)
+    elif type == 'end':
+        start_date = start_date.replace(day=last_day_start)
+        end_date = end_date.replace(day=last_day_end)
     df_title = f'Revenue, {start_date} to {end_date}, type: {type}-month'
     if customer:
         df_title += f', customer: {customer}'

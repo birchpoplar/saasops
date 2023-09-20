@@ -8,7 +8,6 @@ import pandas as pd
 from sqlalchemy import text
 from src.utils import print_status
 from src.classes import MessageStyle
-
 from src import classes, database, calc
 
 # Database display functions
@@ -69,6 +68,7 @@ def print_segments(engine, console=None):
     
     
     # Execute the SQL query to fetch data
+    print_status(console, "... accessing database", MessageStyle.INFO)
     with engine.connect() as conn:
         query = text("""
         SELECT s.SegmentID, s.ContractID, c.RenewalFromContractID, cu.Name, c.ContractDate, s.SegmentStartDate, s.SegmentEndDate, s.Title, s.Type, s.SegmentValue
@@ -82,6 +82,7 @@ def print_segments(engine, console=None):
     rows = result.fetchall()
     
     # Add rows to the Rich table
+    print_status(console, "... compiling segment table", MessageStyle.INFO)
     for row in rows:
         segment_id, contract_id, renewal_from_contract_id, customer_name, contract_date, segment_start_date, segment_end_date, title, segment_type, segment_value = row
         table.add_row(
@@ -111,6 +112,7 @@ def print_segment(engine, segment_id, console=None):
     table.add_column("Field", justify="left")
     table.add_column("Value", justify="right")
 
+    print_status(console, "... accessing database", MessageStyle.INFO)
     with engine.connect() as conn:
         params = {"segment_id": segment_id}
         result = conn.execute(text("SELECT * FROM Segments WHERE SegmentID = :segment_id;"), params)
@@ -122,8 +124,8 @@ def print_segment(engine, segment_id, console=None):
         console.print(f"Segment ID {segment_id} does not exist.")
         return
 
+    print_status(console, "... compiling segment table", MessageStyle.INFO)
     column_names = result.keys()
-
     for field, value in zip(column_names, row):
         table.add_row(field, str(value))
 
@@ -142,7 +144,7 @@ def print_contract(engine, contract_id, console=None):
     table.add_column("Field", justify="left")
     table.add_column("Value", justify="right")
 
-
+    print_status(console, "... accessing database", MessageStyle.INFO)
     with engine.connect() as conn:
         params = {"contract_id": contract_id}
         result = conn.execute(text("SELECT * FROM Contracts WHERE ContractID = :contract_id;"), params)
@@ -154,8 +156,8 @@ def print_contract(engine, contract_id, console=None):
         console.print(f"Contract ID {contract_id} does not exist.")
         return
 
+    print_status(console, "... compiling contract table", MessageStyle.INFO)
     column_names = result.keys()
-
     for field, value in zip(column_names, row):
         table.add_row(field, str(value))
 
@@ -181,15 +183,17 @@ def print_contracts(engine, console=None):
     table.add_column("Term Start Date", justify="right")
     table.add_column("Term End Date", justify="right")
     table.add_column("Total Value", justify="right")
-    
+
+    print_status(console, "... accessing database", MessageStyle.INFO)
     with engine.connect() as conn:
         # Execute the SQL query to fetch data
         result = conn.execute(text("SELECT * FROM Contracts;"))
     
     # Fetch all rows
     rows = result.fetchall()
-    
+
     # Add rows to the Rich table
+    print_status(console, "... compiling contract table", MessageStyle.INFO)
     for row in rows:
         contract_id, customer_id, renewal_from_contract_id, reference, contract_date, term_start_date, term_end_date, total_value = row
         table.add_row(
@@ -226,6 +230,7 @@ def print_invoices(engine, console=None):
     table.add_column("Amount", justify="right")
     
     # Execute the SQL query to fetch data
+    print_status(console, "... accessing database", MessageStyle.INFO)
     with engine.connect() as conn:
         result = conn.execute(text("""
             SELECT c.Name, con.ContractID, s.SegmentID, i.InvoiceID, i.Number, i.Date, i.DaysPayable, i.Amount
@@ -240,6 +245,7 @@ def print_invoices(engine, console=None):
         rows = result.fetchall()
         
         # Add rows to the Rich table
+        print_status(console, "... compiling invoice table", MessageStyle.INFO)
         for row in rows:
             customer_name, contract_id, segment_id, invoice_id, invoice_number, invoice_date, days_payable, amount = row
             table.add_row(
@@ -262,7 +268,8 @@ def print_invoices(engine, console=None):
 def print_dataframe(df, title, console: Console):
     # Transpose DataFrame so customer names become the row index
     transposed_df = df.transpose()
-    
+
+    print_status(console, "... compiling table", MessageStyle.INFO)
     table = Table(title=title, show_header=True, show_lines=True)
     
     # Add the "Customer" column for row titles (customer names)
@@ -274,6 +281,7 @@ def print_dataframe(df, title, console: Console):
         table.add_column(formatted_date, justify="right")
     
     # Add rows to the table
+    print_status(console, "... adding table details", MessageStyle.INFO)
     for customer, row in transposed_df.iterrows():
         values = row.values
         formatted_values = [str(int(value)) for value in values]
@@ -283,6 +291,7 @@ def print_dataframe(df, title, console: Console):
     return True
 
 def print_table(df, title, console: Console):
+    print_status(console, "... compiling table", MessageStyle.INFO)
     table = Table(title=title, show_header=True, show_lines=True)
     
     # Add columns
@@ -290,6 +299,7 @@ def print_table(df, title, console: Console):
         table.add_column(column, justify="right")
     
     # Add rows to the table
+    print_status(console, "... adding table details", MessageStyle.INFO)
     for column, row in df.iterrows():
         values = row.values
         formatted_values = [str(value) for value in values]

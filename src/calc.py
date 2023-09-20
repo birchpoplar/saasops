@@ -1,4 +1,5 @@
 from src import utils
+from src.utils import print_status
 from sqlalchemy import text
 from src.classes import MessageStyle
 from rich.console import Console
@@ -12,10 +13,13 @@ import calendar
 def populate_bkings_carr_arr_df(start_date, end_date, engine, customer=None, contract=None):
     """Generate a DataFrame with Bookings, ARR and CARR for each month. NOTE: the day of the month on each of start_date and end_date is ignored in the creation of date_list that has end of month days only."""
 
+    console = Console()
+    
     # Generate list of dates
     date_list = []
     current_date = start_date
 
+    print_status(console, f"... generating bkings dataframe from {start_date} to {end_date}", MessageStyle.INFO)
     while current_date <= end_date:
         _, last_day = calendar.monthrange(current_date.year, current_date.month)
         eom_date = current_date.replace(day=last_day)  # End-of-month date
@@ -98,11 +102,15 @@ def populate_bkings_carr_arr_df(start_date, end_date, engine, customer=None, con
 def populate_revenue_df(start_date, end_date, type, engine, customer=None, contract=None):
     """Populate a DataFrame with active revenue for each customer in each month. The days of the month on each of start_date and end_date are ignored in the creation of date_list that has middle or end of month days only, depending on the string value of type."""
 
+    console = Console()
+    
     # Generate list of dates
     date_list = []
     current_date = start_date
-    
-    while current_date <= end_date:
+
+    print_status(console, f"... generating revenue dataframe from {start_date} to {end_date}", MessageStyle.INFO)
+
+    while True:
         _, last_day = calendar.monthrange(current_date.year, current_date.month)
 
         if type == "mid":
@@ -112,11 +120,15 @@ def populate_revenue_df(start_date, end_date, type, engine, customer=None, contr
         else:
             raise ValueError("type must be either 'mid' or 'end'")
 
-        target_date = current_date.replace(day=target_day) 
+        target_date = current_date.replace(day=target_day)
+
+        if target_date > end_date.replace(day=target_day):
+            break
+
         date_list.append(target_date)
-        
-        # Add one month to get the next start_date
-        current_date = target_date + rd.relativedelta(months=1)
+
+        # Increment current_date by one month
+        current_date += rd.relativedelta(months=1)
 
     # Create empty DataFrame
     df = pd.DataFrame(index=date_list)
@@ -163,14 +175,21 @@ def populate_revenue_df(start_date, end_date, type, engine, customer=None, contr
 
 def populate_metrics_df(start_date, end_date, engine, customer=None, contract=None):
     """Populate a DataFrame with metrics for each month in the date range. Note that the days of the month on each of start_date and end_date are ignored in the creation of date_list that has end of month days only."""
-    
+
+    console = Console()
+
     # Obtain the revenue DataFrame
     revenue_df = populate_revenue_df(start_date, end_date, "end", engine, customer, contract)
+
+    # Force start_date and end_date to be the last days of the input months
+    #start_date = start_date.replace(day=calendar.monthrange(start_date.year, start_date.month)[1])
+    #end_date = end_date.replace(day=calendar.monthrange(end_date.year, end_date.month)[1])
     
     # Generate list of dates
     date_list = []
     current_date = start_date
 
+    print_status(console, f"... generating metrics dataframe from {start_date} to {end_date}", MessageStyle.INFO)
     while current_date <= end_date:
         _, last_day = calendar.monthrange(current_date.year, current_date.month)
         eom_date = current_date.replace(day=last_day)  # End-of-month date
@@ -251,7 +270,6 @@ def populate_metrics_df(start_date, end_date, engine, customer=None, contract=No
         logging.info(f"Contraction MRR: {contraction_mrr_sum}")
         logging.info(f"Starting MRR: {starting_mrr_sum}")
         logging.info(f"Ending MRR: {ending_mrr_sum}")
-
 
     metrics_df = metrics_df.astype(float)
     metrics_df = metrics_df.round(1)

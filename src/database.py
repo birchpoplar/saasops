@@ -22,7 +22,7 @@ def connect_database(console: Console):
         print_status(console, "No database name provided. Please provide a database name in the DB_NAME environment variable.", MessageStyle.ERROR)
         exit(1)
     else:
-        print_status(console, f"Database name: {os.environ.get('DB_NAME')}", MessageStyle.INFO)
+        print_status(console, f"Database name: [bold yellow]{os.environ.get('DB_NAME')}[/bold yellow]", MessageStyle.INFO)
         db_name = os.environ.get("DB_NAME")
     
     # Create the connection string

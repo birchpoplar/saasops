@@ -11,6 +11,9 @@ from matplotlib.ticker import FuncFormatter, FixedLocator
 import numpy as np
 import math
 from constants import COLOR_MAP
+from src.utils import print_status
+from src.classes import MessageStyle
+from rich.console import Console
 
 def thousands_formatter(x, pos):
     return f"${x/1000:,.0f}K"
@@ -22,6 +25,8 @@ def round_up_to_base(x, base=5000):
 
 def ttm_ndr_gdr_chart(engine, target_date, customer=None, contract=None):
 
+    console = Console()
+    print_status(console, f"Calculating TTM NDR and GDR for {target_date}...", MessageStyle.INFO)
     # Calculate trailing 12-month values for a given date (e.g., 2023-06-15)
     start_date = pd.to_datetime(target_date) - pd.DateOffset(months=11)
     end_date = pd.to_datetime(target_date)
@@ -134,6 +139,9 @@ def ttm_ndr_gdr_chart(engine, target_date, customer=None, contract=None):
 
 
 def create_mrr_change_chart(engine, start_date, end_date, customer=None, contract=None):
+
+    console = Console()
+    print_status(console, f"Creating MRR change chart between {start_date} and {end_date}", MessageStyle.INFO)
     metrics_df = calc.populate_metrics_df(start_date, end_date, engine, customer, contract)
 
     # Convert the index to DateTimeIndex if it's not already
@@ -199,6 +207,9 @@ def create_mrr_change_chart(engine, start_date, end_date, customer=None, contrac
 
 
 def create_monthly_mrr_chart(engine, start_date, end_date, customer=None, contract=None):
+
+    console = Console()
+    print_status(console, f"Creating monthly MRR chart between {start_date} and {end_date}", MessageStyle.INFO)
     metrics_df = calc.populate_metrics_df(start_date, end_date, engine, customer, contract)
 
     # Convert the index to DateTimeIndex if it's not already
@@ -265,6 +276,8 @@ def create_monthly_mrr_chart(engine, start_date, end_date, customer=None, contra
 
 def create_bookings_arr_carr_chart(engine, start_date, end_date, customer=None, contract=None):
 
+    console = Console()
+    print_status(console, f"Creating bookings, ARR, and CARR chart between {start_date} and {end_date}", MessageStyle.INFO)
     df = calc.populate_bkings_carr_arr_df(start_date, end_date, engine, customer, contract)
     
     # Convert the index to DateTimeIndex if it's not already

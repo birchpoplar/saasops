@@ -117,6 +117,15 @@ def prntcont(contract_id: int):
     engine = database.connect_database(console)
     display.print_contract(engine, contract_id, console)
 
+@contract_app.command("reconcile")
+def reconcont(contract_id: int):
+    """
+    Reconcile a contract with linked segment details.
+    """
+    console = Console()
+    engine = database.connect_database(console)
+    display.print_contract_details(engine, contract_id, console)
+    
 # Segment commands
 
 @segment_app.command("list")

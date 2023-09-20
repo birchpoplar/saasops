@@ -43,10 +43,8 @@ Then open the create_tables.sql file, and hit y to load the directory local vari
 
 ## TODOs
 
-- Move into a docker container for install
-- make status updates consistent and more descriptive on what is going on behind calcs
-- make the app call the name only, not python + main.py
-1. add in color selection for charts with config load
-6. build sanity check on segments/contracts - match total value and timeline, identify inconsistencies
-7. build in sanity/correctness checking on inputs, e.g. end date after start date etc.
-8. export pptx function should take input filename as argument
+1. Move into a docker container for install
+2. make the app call the name only, not python + main.py
+3. add in color selection for charts with config load
+4. build in sanity/correctness checking on inputs, e.g. end date after start date etc.
+5. export pptx function should take input filename as argument

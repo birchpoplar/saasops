@@ -119,10 +119,13 @@ def populate_revenue_df(start_date, end_date, type, engine, customer=None, contr
             target_day = last_day
         else:
             raise ValueError("type must be either 'mid' or 'end'")
-
+        
         target_date = current_date.replace(day=target_day)
-
-        if target_date > end_date.replace(day=target_day):
+        # If type is 'mid', always compare with the 15th of end_date
+        if type == "mid" and target_date > end_date.replace(day=15):
+            break
+        # If type is 'end', compare with the last day of end_date's month
+        elif type == "end" and target_date > end_date.replace(day=calendar.monthrange(end_date.year, end_date.month)[1]):
             break
 
         date_list.append(target_date)
@@ -179,6 +182,7 @@ def populate_metrics_df(start_date, end_date, engine, customer=None, contract=No
     console = Console()
 
     # Obtain the revenue DataFrame
+    print(start_date, end_date)
     revenue_df = populate_revenue_df(start_date, end_date, "end", engine, customer, contract)
 
     # Force start_date and end_date to be the last days of the input months

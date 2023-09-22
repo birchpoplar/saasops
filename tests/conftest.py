@@ -21,9 +21,21 @@ def create_test_db():
 
 def drop_test_db(db_name):
     engine = create_engine(f"postgresql://testuser:testuser@localhost/postgres")
-    with engine.connect() as connection:
-        connection.execution_options(isolation_level="AUTOCOMMIT").execute(text(f"DROP DATABASE {db_name}"))
-    engine.dispose()
+    try:
+        with engine.connect() as connection:
+            result = connection.execute(text("SELECT 1 FROM pg_database WHERE datname = :db_name"), {"db_name": db_name})
+            if result.scalar():
+                connection.commit()
+                print(f"Dropping database {db_name}")
+                connection.execution_options(isolation_level="AUTOCOMMIT").execute(text(f"DROP DATABASE {db_name}"))
+                print(f"Database {db_name} dropped")
+            else:
+                print(f"Database {db_name} does not exist")
+                
+    except Exception as e:
+        print(f"Could not drop database {db_name}: {e}")
+    finally:
+        engine.dispose()
 
 def populate_sample_data_case1(engine):
     console = Console()
@@ -63,7 +75,10 @@ def base_db_engine():
     engine = create_engine(f"postgresql://testuser:testuser@localhost/{db_name}")
     yield engine
     engine.dispose()
-    drop_test_db(db_name)
+    try:
+        drop_test_db(db_name)
+    except Exception as e:
+        print(f"Could not drop database {db_name}: {e}")
 
 @pytest.fixture
 def db_engine_case1(base_db_engine):

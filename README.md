@@ -32,7 +32,10 @@ Then open the create_tables.sql file, and hit y to load the directory local vari
 - GRANT ALL PRIVILEGES ON DATABASE postgres TO testuser; (so can connect with an engine)
 - ALTER USER testuser CREATEDB; to create new DBs
 - ALTER DATABASE template_test_db OWNER TO testuser;
+- ALTER TABLE (all_tables) OWNER TO testuser: -- Need to do this for the five tables)
+Should have this as an SQL script that user can call into psql to set up correctly
 
+also need template_customer_db - or maybe even just standard db template
 
 ## SQL scripts
 

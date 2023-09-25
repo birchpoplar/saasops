@@ -12,7 +12,16 @@ from src.utils import print_status
 # Database functions
 
 def connect_database(console: Console):
+    """
+    Connect to the database and return the connection object.
 
+    Args:
+        console (Console): Rich console object
+
+    Returns:
+        engine: SQLAlchemy engine object
+    """
+    
     # Get database credentials from environment variables
     db_host = os.environ.get("DB_HOST")
     db_user = os.environ.get("DB_USER")
@@ -37,6 +46,17 @@ def connect_database(console: Console):
 
 
 def fetch_data_from_db(engine, table_name):
+    """
+    Fetch data from a database table and return a Pandas DataFrame.
+
+    Args:
+        engine (SQLAlchemy engine object): SQLAlchemy engine object
+        table_name (str): Name of the table to fetch data from
+
+    Returns:
+        Pandas DataFrame: DataFrame containing the data from the table
+    """
+    
     # Create a new DataFrame from a database table
     with engine.begin() as conn:
         query = text(f"SELECT * FROM {table_name}")

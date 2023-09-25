@@ -67,7 +67,7 @@ def populate_bkings_carr_arr_df(start_date, end_date, engine, customer=None, con
 
     # ========================
     # Get CARRARR source data
-    df_carrarr = generate_full_data_table(engine)
+    df_carrarr = generate_subscription_data_table(engine)
     
     # loop over date_list and populate df in the ARR column with the annual value of each contract where the date in date_list is between the segmentstartdate and segmentenddate (inclusive)
     for d in date_list:
@@ -126,47 +126,50 @@ def populate_revenue_df(start_date, end_date, type, engine, customer=None, contr
 
     # Create empty DataFrame
     df = pd.DataFrame(index=date_list)
-    
-    # Get REVENUE source data
+
+    # Add columns for each customer name in df 
     query = text("""
     SELECT
     c.CustomerID AS "customer id",
-    con.ContractID AS "contract id",
-    con.RenewalFromContractID AS "renewalfromcontractid",
-    con.ContractDate AS "contractdate",
-    seg.SegmentID AS "segmentid",
-    seg.SegmentStartDate AS "segmentstartdate",
-    seg.SegmentEndDate AS "segmentenddate",
-    seg.SegmentValue AS "segmentvalue", 
-    seg.Type AS "segmenttype"
+    c.Name AS "customer name"
     FROM
     Customers c
-    JOIN
-    Contracts con ON c.CustomerID = con.CustomerID
-    JOIN
-    Segments seg ON con.ContractID = seg.ContractID;
-    """)
-    # Execute query
+    """
+                 )
     with engine.begin() as conn:
         result = conn.execute(query)
-        src_revenue = result.fetchall()
+        src_customers = result.fetchall()
         columns = result.keys()
 
-    # Create DataFrame from source data
-    df_rev = pd.DataFrame(src_revenue, columns=columns)
+    # Convert to DataFrame
+    df_customers = pd.DataFrame(src_customers, columns=columns)
+    # Set index to 'customer id'
+    df_customers.set_index('customer id', inplace=True)
 
-    # Convert date columns to datetime
-    df_rev['contractdate'] = pd.to_datetime(df_rev['contractdate'])
-    df_rev['segmentstartdate'] = pd.to_datetime(df_rev['segmentstartdate'])
-    df_rev['segmentenddate'] = pd.to_datetime(df_rev['segmentenddate'])
+    # Add columns for each customer name in df
+    for customer_id, customer_name in df_customers['customer name'].items():
+        df[customer_name] = 0.0
+    
+    # ========================
+    # Get revenue source data
+    df_revenue = generate_subscription_data_table(engine)
 
-    # Remove entries that are not of type 'Subscription'
-    df_rev = df_rev.loc[df_rev['segmenttype'] == 'Subscription']
-        
-    # Retrieve unique customer names from the Customers table
-    # with engine.begin() as conn:
-
-
+    # loop over date_list and customer name and populate df in a column with customer name the revenue for the customer where the date in date_list is between the segmentstartdate and segmentenddate (inclusive), the revenue being calculated as the annual value divided by contract length in months
+    # ...
+    for d in date_list:
+        d_datetime = pd.Timestamp(d)
+        # Get contracts that are active for the month of d
+        contracts = df_revenue.loc[(df_revenue['segmentstartdate'] <= d_datetime) & (df_revenue['segmentenddate'] >= d_datetime)]
+        # Loop over customers
+        for customer_id, customer_name in df_customers['customer name'].items():
+            # Get contracts for the customer
+            customer_contracts = contracts.loc[contracts['customer id'] == customer_id].copy()
+            # Calculate the monthly revenue for each contract
+            customer_contracts['monthly_revenue'] = customer_contracts['segmentvalue'] / customer_contracts['contractlength']
+            # Sum the monthly revenues for the month of d
+            revenue = customer_contracts['monthly_revenue'].sum()
+            # Populate df
+            df.at[d, customer_name] = revenue
         
     df = df.astype(float)
     df = df.round(1)
@@ -276,32 +279,40 @@ def populate_metrics_df(start_date, end_date, engine, customer=None, contract=No
     return metrics_df
 
 def customer_arr_df(date, engine):
-    """Generate a DataFrame with ARR for each customer for a given date."""
+    """
+    Generate a DataFrame with ARR for each customer for a given date.
+
+    Args:
+        date (str): The date for which to calculate ARR.
+        engine (sqlalchemy.engine): The SQLAlchemy engine to use for database access.
+
+    Returns:
+        df (pandas.DataFrame): A DataFrame with ARR for each customer for a given date.
+    """
 
     # Create an empty DataFrame
     df = pd.DataFrame(columns=['CustomerName', 'ARR'])
+
+    df_arr = generate_subscription_data_table(engine)
     
+    # Create a list of all customers
+    customer_names_str = "SELECT DISTINCT Name FROM Customers"
     with engine.begin() as conn:
-        # Create the SQL query for ARR by Customer
-        arr_by_customer_sql = text(
-            f"SELECT cu.Name, SUM(s.SegmentValue) as ARR "
-            f"FROM Segments s "
-            f"JOIN Contracts c ON s.ContractID = c.ContractID "
-            f"JOIN Customers cu ON c.CustomerID = cu.CustomerID "
-            f"WHERE s.Type = 'Subscription' "
-            f"AND '{date}'::DATE BETWEEN c.TermStartDate::DATE AND s.SegmentEndDate::DATE "
-            f"GROUP BY cu.Name"
-        )
-         
-        # Execute SQL to get ARR by customer
-        arr_by_customer_result = conn.execute(arr_by_customer_sql, {'date': date}).fetchall()
+        customer_names_result = conn.execute(text(customer_names_str))
+        customer_names = [row[0] for row in customer_names_result.fetchall()]
 
-        # Populate DataFrame
-        for row in arr_by_customer_result:
-            customer_name = row[0]
-            arr_value = row[1] if row[1] is not None else 0
-            df = pd.concat([df, pd.DataFrame([[customer_name, arr_value]], columns=['CustomerName', 'ARR'])])
-
+    # Calculate ARR for each customer
+    date_datetime = pd.Timestamp(date)
+    for customer in customer_names:
+        # Filter df_arr for the current customer
+        customer_data = df_arr[df_arr['customer name'] == customer]
+        # Further filter for segments that are active on the provided date
+        active_segments = customer_data[(customer_data['segmentstartdate'] <= date_datetime) & (customer_data['segmentenddate'] >= date_datetime)]
+        # Calculate the total ARR for the customer
+        total_arr = active_segments['annualvalue'].sum()
+        # Append to the main dataframe
+        df.loc[len(df)] = [customer, total_arr]
+        
     # Set 'CustomerName' as the DataFrame index
     df.set_index('CustomerName', inplace=True)
 
@@ -316,52 +327,36 @@ def customer_carr_df(date, engine):
     
     # Create an empty DataFrame
     df = pd.DataFrame(columns=['CustomerName', 'CARR'])
-    
-    with engine.begin() as conn:
-        
-        # Create the SQL query for CARR by Customer
-        carr_by_customer_sql = text(
-            f"WITH RenewedContracts AS ("
-            f"  SELECT ContractID, RenewalFromContractID, ContractDate "
-            f"  FROM Contracts "
-            f"  WHERE RenewalFromContractID IS NOT NULL"
-            f"), "
-            f"ValidContracts AS ("
-            f"  SELECT c.ContractID, cu.CustomerID "
-            f"  FROM Contracts c "
-            f"  LEFT JOIN Segments s ON c.ContractID = s.ContractID "
-            f"  LEFT JOIN RenewedContracts r ON c.ContractID = r.RenewalFromContractID "
-            f"  LEFT JOIN Customers cu ON c.CustomerID = cu.CustomerID "
-            f"  WHERE '{date}'::DATE <= COALESCE(r.ContractDate::DATE, '{date}'::DATE + 1) "
-            f"  AND '{date}'::DATE BETWEEN c.ContractDate::DATE AND s.SegmentEndDate::DATE "
-            f") "
-            f"SELECT cu.Name, SUM(s.SegmentValue) as CARR "
-            f"FROM Segments s "
-            f"JOIN ValidContracts vc ON s.ContractID = vc.ContractID "
-            f"JOIN Customers cu ON vc.CustomerID = cu.CustomerID "
-            f"WHERE s.Type = 'Subscription' "
-            f"GROUP BY cu.Name"
-        )
-        
-        # Execute SQL to get CARR by customer
-        carr_by_customer_result = conn.execute(carr_by_customer_sql, {'date': date}).fetchall()
 
-        # Populate DataFrame
-        for row in carr_by_customer_result:
-            customer_name = row[0]
-            carr_value = row[1] if row[1] is not None else 0
-            df = pd.concat([df, pd.DataFrame([[customer_name, carr_value]], columns=['CustomerName', 'CARR'])])
+    df_carr = generate_subscription_data_table(engine)
     
+    # Create a list of all customers
+    customer_names_str = "SELECT DISTINCT Name FROM Customers"
+    with engine.begin() as conn:
+        customer_names_result = conn.execute(text(customer_names_str))
+        customer_names = [row[0] for row in customer_names_result.fetchall()]
+
+    # Calculate ARR for each customer
+    date_datetime = pd.Timestamp(date)
+    for customer in customer_names:
+        # Filter df_arr for the current customer
+        customer_data = df_carr[df_carr['customer name'] == customer]
+        # Further filter for segments that are active on the provided date
+        active_segments = customer_data[(customer_data['contractdate'] <= date_datetime) & (customer_data['segmentenddate'] >= date_datetime)]
+        # Calculate the total ARR for the customer
+        total_carr = active_segments['annualvalue'].sum()
+        # Append to the main dataframe
+        df.loc[len(df)] = [customer, total_carr]
+        
     # Set 'CustomerName' as the DataFrame index
     df.set_index('CustomerName', inplace=True)
-    
-    # Calculate and append the total CARR
+
     total_carr = df['CARR'].sum()
     df.loc['Total CARR'] = total_carr
     
     return df
 
-def generate_full_data_table(engine):
+def generate_subscription_data_table(engine):
     """
     Generate a DataFrame with all generally required data from the database.
     """
@@ -369,6 +364,7 @@ def generate_full_data_table(engine):
     query = text("""
     SELECT
     c.CustomerID AS "customer id",
+    c.Name AS "customer name",
     con.ContractID AS "contract id",
     con.RenewalFromContractID AS "renewalfromcontractid",
     con.ContractDate AS "contractdate",

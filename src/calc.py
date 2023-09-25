@@ -67,58 +67,7 @@ def populate_bkings_carr_arr_df(start_date, end_date, engine, customer=None, con
 
     # ========================
     # Get CARRARR source data
-    query = text("""
-    SELECT
-    c.CustomerID AS "customer id",
-    con.ContractID AS "contract id",
-    con.RenewalFromContractID AS "renewalfromcontractid",
-    con.ContractDate AS "contractdate",
-    seg.SegmentID AS "segmentid",
-    seg.SegmentStartDate AS "segmentstartdate",
-    seg.SegmentEndDate AS "segmentenddate",
-    seg.SegmentValue AS "segmentvalue", 
-    seg.Type AS "segmenttype"
-    FROM
-    Customers c
-    JOIN
-    Contracts con ON c.CustomerID = con.CustomerID
-    JOIN
-    Segments seg ON con.ContractID = seg.ContractID;
-    """)
-    # Execute query
-    with engine.begin() as conn:
-        result = conn.execute(query)
-        src_carrarr = result.fetchall()
-        columns = result.keys()
-
-    # Convert to DataFrame
-    df_carrarr = pd.DataFrame(src_carrarr, columns=columns)
-    
-    # Convert date columns to datetime
-    df_carrarr['contractdate'] = pd.to_datetime(df_carrarr['contractdate'])
-    df_carrarr['segmentstartdate'] = pd.to_datetime(df_carrarr['segmentstartdate'])
-    df_carrarr['segmentenddate'] = pd.to_datetime(df_carrarr['segmentenddate'])
-
-    # Remove entries where segmenttype is not 'Subscription'
-    df_carrarr = df_carrarr.loc[df_carrarr['segmenttype'] == 'Subscription']
-    
-    # Add in column 'annualvalue', which is the segmentvalue divided by the number of months in the segment
-    df_carrarr['contractlength'] = (df_carrarr['segmentenddate'].dt.year - df_carrarr['segmentstartdate'].dt.year) * 12 + (df_carrarr['segmentenddate'].dt.month - df_carrarr['segmentstartdate'].dt.month)
-
-    # Calculate the difference in days
-    df_carrarr['day_diff'] = (df_carrarr['segmentenddate'].dt.day - df_carrarr['segmentstartdate'].dt.day)
-    
-    # Adjust the month count based on day difference
-    df_carrarr['contractlength'] = np.where(df_carrarr['day_diff'] > 15, df_carrarr['contractlength'] + 1, df_carrarr['contractlength'])
-    df_carrarr['contractlength'] = np.where(df_carrarr['day_diff'] < -15, df_carrarr['contractlength'] - 1, df_carrarr['contractlength'])
-    
-    # Compute the annual value using the contract length
-    df_carrarr['annualvalue'] = df_carrarr['segmentvalue'] / (df_carrarr['contractlength'] / 12)
-    
-    # Optionally, you can drop the 'day_diff' column if you don't need it anymore
-    df_carrarr = df_carrarr.drop('day_diff', axis=1)
-
-    print(df_carrarr)
+    df_carrarr = generate_full_data_table(engine)
     
     # loop over date_list and populate df in the ARR column with the annual value of each contract where the date in date_list is between the segmentstartdate and segmentenddate (inclusive)
     for d in date_list:
@@ -135,7 +84,7 @@ def populate_bkings_carr_arr_df(start_date, end_date, engine, customer=None, con
         contracts = df_carrarr.loc[(df_carrarr['contractdate'] <= d_datetime) & (df_carrarr['segmentenddate'] >= d_datetime)]
         # Sum the annual value for the month of d
         df.at[d, 'CARR'] = contracts['annualvalue'].sum()
-            
+
     df = df.astype(float)
     df = df.round(1)
     return df
@@ -178,59 +127,47 @@ def populate_revenue_df(start_date, end_date, type, engine, customer=None, contr
     # Create empty DataFrame
     df = pd.DataFrame(index=date_list)
     
-    # Retrieve unique customer names from the Customers table
+    # Get REVENUE source data
+    query = text("""
+    SELECT
+    c.CustomerID AS "customer id",
+    con.ContractID AS "contract id",
+    con.RenewalFromContractID AS "renewalfromcontractid",
+    con.ContractDate AS "contractdate",
+    seg.SegmentID AS "segmentid",
+    seg.SegmentStartDate AS "segmentstartdate",
+    seg.SegmentEndDate AS "segmentenddate",
+    seg.SegmentValue AS "segmentvalue", 
+    seg.Type AS "segmenttype"
+    FROM
+    Customers c
+    JOIN
+    Contracts con ON c.CustomerID = con.CustomerID
+    JOIN
+    Segments seg ON con.ContractID = seg.ContractID;
+    """)
+    # Execute query
     with engine.begin() as conn:
-        customer_names_str = ("SELECT DISTINCT Name FROM Customers")
-        if customer is not None:
-            customer_names_str += f" WHERE CustomerID = '{customer}'"
+        result = conn.execute(query)
+        src_revenue = result.fetchall()
+        columns = result.keys()
 
-        customer_names_result = conn.execute(text(customer_names_str))
-        customer_names = [row[0] for row in customer_names_result.fetchall()]
+    # Create DataFrame from source data
+    df_rev = pd.DataFrame(src_revenue, columns=columns)
+
+    # Convert date columns to datetime
+    df_rev['contractdate'] = pd.to_datetime(df_rev['contractdate'])
+    df_rev['segmentstartdate'] = pd.to_datetime(df_rev['segmentstartdate'])
+    df_rev['segmentenddate'] = pd.to_datetime(df_rev['segmentenddate'])
+
+    # Remove entries that are not of type 'Subscription'
+    df_rev = df_rev.loc[df_rev['segmenttype'] == 'Subscription']
         
-        # Populate DataFrame with active revenue
-        for d in date_list:
-            for customer in customer_names:
-                query_str = f"""
-                WITH MaxTermStart AS (
-                SELECT
-                c.CustomerID,
-                MAX(c.TermStartDate) AS MaxStartDate
-                FROM
-                Contracts c
-                WHERE
-                c.TermStartDate <= '{d}'
-                GROUP BY
-                c.CustomerID
-                )
-                SELECT
-                SUM(s.SegmentValue / ROUND(EXTRACT(EPOCH FROM AGE(s.SegmentEndDate, s.SegmentStartDate)) / 3600 / 24 / 30))
-                FROM
-                Segments s
-                JOIN
-                Contracts c ON s.ContractID = c.ContractID
-                JOIN
-                MaxTermStart mts ON c.CustomerID = mts.CustomerID
-                JOIN
-                Customers cu ON c.CustomerID = cu.CustomerID
-                WHERE
-                '{d}' BETWEEN s.SegmentStartDate AND s.SegmentEndDate
-                AND cu.Name = '{customer}'
-                AND s.Type = 'Subscription'
-                AND c.TermStartDate = mts.MaxStartDate
-                """
-                # Add contract filter if specified
-                if contract is not None:
-                    query_str += f"AND c.ContractID = '{contract}'"
+    # Retrieve unique customer names from the Customers table
+    # with engine.begin() as conn:
 
-                query = text(query_str)                    
-                active_revenue_result = conn.execute(query)
-                active_revenue = active_revenue_result.fetchone()[0]
-                
-                if active_revenue is None:
-                    active_revenue = 0
-                    
-                df.at[d, customer] = active_revenue
 
+        
     df = df.astype(float)
     df = df.round(1)
     return df
@@ -422,4 +359,62 @@ def customer_carr_df(date, engine):
     total_carr = df['CARR'].sum()
     df.loc['Total CARR'] = total_carr
     
+    return df
+
+def generate_full_data_table(engine):
+    """
+    Generate a DataFrame with all generally required data from the database.
+    """
+    # Create SQL query
+    query = text("""
+    SELECT
+    c.CustomerID AS "customer id",
+    con.ContractID AS "contract id",
+    con.RenewalFromContractID AS "renewalfromcontractid",
+    con.ContractDate AS "contractdate",
+    seg.SegmentID AS "segmentid",
+    seg.SegmentStartDate AS "segmentstartdate",
+    seg.SegmentEndDate AS "segmentenddate",
+    seg.SegmentValue AS "segmentvalue", 
+    seg.Type AS "segmenttype"
+    FROM
+    Customers c
+    JOIN
+    Contracts con ON c.CustomerID = con.CustomerID
+    JOIN
+    Segments seg ON con.ContractID = seg.ContractID;
+    """)
+    # Execute query
+    with engine.begin() as conn:
+        result = conn.execute(query)
+        src_df = result.fetchall()
+        columns = result.keys()
+
+    # Convert to DataFrame
+    df = pd.DataFrame(src_df, columns=columns)
+    
+    # Convert date columns to datetime
+    df['contractdate'] = pd.to_datetime(df['contractdate'])
+    df['segmentstartdate'] = pd.to_datetime(df['segmentstartdate'])
+    df['segmentenddate'] = pd.to_datetime(df['segmentenddate'])
+
+    # Remove entries where segmenttype is not 'Subscription'
+    df = df.loc[df['segmenttype'] == 'Subscription']
+    
+    # Add in column 'annualvalue', which is the segmentvalue divided by the number of months in the segment
+    df['contractlength'] = (df['segmentenddate'].dt.year - df['segmentstartdate'].dt.year) * 12 + (df['segmentenddate'].dt.month - df['segmentstartdate'].dt.month)
+
+    # Calculate the difference in days
+    df['day_diff'] = (df['segmentenddate'].dt.day - df['segmentstartdate'].dt.day)
+    
+    # Adjust the month count based on day difference
+    df['contractlength'] = np.where(df['day_diff'] > 15, df['contractlength'] + 1, df['contractlength'])
+    df['contractlength'] = np.where(df['day_diff'] < -15, df['contractlength'] - 1, df['contractlength'])
+    
+    # Compute the annual value using the contract length
+    df['annualvalue'] = df['segmentvalue'] / (df['contractlength'] / 12)
+    
+    # Optionally, you can drop the 'day_diff' column if you don't need it anymore
+    df = df.drop('day_diff', axis=1)
+
     return df

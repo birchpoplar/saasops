@@ -9,9 +9,10 @@ import psycopg2
 import pandas as pd
 import logging
 import calendar
+import numpy as np
 
 def populate_bkings_carr_arr_df(start_date, end_date, engine, customer=None, contract=None):
-    """Generate a DataFrame with Bookings, ARR and CARR for each month. NOTE: the day of the month on each of start_date and end_date is ignored in the creation of date_list that has end of month days only."""
+    """Generate a DataFrame with Bookings, ARR and CARR for each month."""
 
     console = Console()
     
@@ -31,69 +32,110 @@ def populate_bkings_carr_arr_df(start_date, end_date, engine, customer=None, con
     # Create empty DataFrame with 'ARR' and 'CARR' columns
     df = pd.DataFrame(index=date_list, columns=['Bookings', 'ARR', 'CARR'])
 
+    # ========================
+    # Get bookings data 
+    query = text("""
+    SELECT
+    c.CustomerID AS "customer id",
+    c.Name AS "customer name",
+    con.ContractID AS "contract id",
+    con.RenewalFromContractID AS "renewalfromcontractid",
+    con.ContractDate AS "contractdate",
+    con.TotalValue AS "totalvalue"
+    FROM
+    Customers c
+    JOIN
+    Contracts con ON c.CustomerID = con.CustomerID;
+    """
+                 )
     with engine.begin() as conn:
-        for date in date_list:
+        result = conn.execute(query)
+        src_bookings = result.fetchall()
+        columns = result.keys()
 
-            # define a common WHERE clause for customer and contract
-            where_clause = ''
-            if customer:
-                where_clause += f" AND c.CustomerID = {customer} "
-            if contract:
-                where_clause += f" AND c.ContractID = {contract} "
+    # Convert to DataFrame
+    df_bookings = pd.DataFrame(src_bookings, columns=columns)
+    # Convert 'contractdate' column to datetime
+    df_bookings['contractdate'] = pd.to_datetime(df_bookings['contractdate'])
+
+    # loop over date_list and populate df in the Bookings column, by adding in the contract value for each contract that has the same month and year as the date in date_list
+    for d in date_list:
+        # Get bookings for the month of d
+        bookings = df_bookings.loc[(df_bookings['contractdate'].dt.month == d.month) & (df_bookings['contractdate'].dt.year == d.year)]
+        # Sum the bookings for the month of d
+        df.at[d, 'Bookings'] = bookings['totalvalue'].sum()
+
+    # ========================
+    # Get CARRARR source data
+    query = text("""
+    SELECT
+    c.CustomerID AS "customer id",
+    con.ContractID AS "contract id",
+    con.RenewalFromContractID AS "renewalfromcontractid",
+    con.ContractDate AS "contractdate",
+    seg.SegmentID AS "segmentid",
+    seg.SegmentStartDate AS "segmentstartdate",
+    seg.SegmentEndDate AS "segmentenddate",
+    seg.SegmentValue AS "segmentvalue", 
+    seg.Type AS "segmenttype"
+    FROM
+    Customers c
+    JOIN
+    Contracts con ON c.CustomerID = con.CustomerID
+    JOIN
+    Segments seg ON con.ContractID = seg.ContractID;
+    """)
+    # Execute query
+    with engine.begin() as conn:
+        result = conn.execute(query)
+        src_carrarr = result.fetchall()
+        columns = result.keys()
+
+    # Convert to DataFrame
+    df_carrarr = pd.DataFrame(src_carrarr, columns=columns)
+    
+    # Convert date columns to datetime
+    df_carrarr['contractdate'] = pd.to_datetime(df_carrarr['contractdate'])
+    df_carrarr['segmentstartdate'] = pd.to_datetime(df_carrarr['segmentstartdate'])
+    df_carrarr['segmentenddate'] = pd.to_datetime(df_carrarr['segmentenddate'])
+
+    # Remove entries where segmenttype is not 'Subscription'
+    df_carrarr = df_carrarr.loc[df_carrarr['segmenttype'] == 'Subscription']
+    
+    # Add in column 'annualvalue', which is the segmentvalue divided by the number of months in the segment
+    df_carrarr['contractlength'] = (df_carrarr['segmentenddate'].dt.year - df_carrarr['segmentstartdate'].dt.year) * 12 + (df_carrarr['segmentenddate'].dt.month - df_carrarr['segmentstartdate'].dt.month)
+
+    # Calculate the difference in days
+    df_carrarr['day_diff'] = (df_carrarr['segmentenddate'].dt.day - df_carrarr['segmentstartdate'].dt.day)
+    
+    # Adjust the month count based on day difference
+    df_carrarr['contractlength'] = np.where(df_carrarr['day_diff'] > 15, df_carrarr['contractlength'] + 1, df_carrarr['contractlength'])
+    df_carrarr['contractlength'] = np.where(df_carrarr['day_diff'] < -15, df_carrarr['contractlength'] - 1, df_carrarr['contractlength'])
+    
+    # Compute the annual value using the contract length
+    df_carrarr['annualvalue'] = df_carrarr['segmentvalue'] / (df_carrarr['contractlength'] / 12)
+    
+    # Optionally, you can drop the 'day_diff' column if you don't need it anymore
+    df_carrarr = df_carrarr.drop('day_diff', axis=1)
+
+    print(df_carrarr)
+    
+    # loop over date_list and populate df in the ARR column with the annual value of each contract where the date in date_list is between the segmentstartdate and segmentenddate (inclusive)
+    for d in date_list:
+        d_datetime = pd.Timestamp(d)
+        # Get contracts that are active for the month of d
+        contracts = df_carrarr.loc[(df_carrarr['segmentstartdate'] <= d_datetime) & (df_carrarr['segmentenddate'] >= d_datetime)]
+        # Sum the annual value for the month of d
+        df.at[d, 'ARR'] = contracts['annualvalue'].sum()
+
+    # loop over date_list and populate df in the CARR column with the annual value of each contract where the date in date_list is between the contractdate and segmentenddate (inclusive)
+    for d in date_list:
+        d_datetime = pd.Timestamp(d)
+        # Get contracts that are active for the month of d
+        contracts = df_carrarr.loc[(df_carrarr['contractdate'] <= d_datetime) & (df_carrarr['segmentenddate'] >= d_datetime)]
+        # Sum the annual value for the month of d
+        df.at[d, 'CARR'] = contracts['annualvalue'].sum()
             
-            # Calculate Bookings
-            som_date = date.replace(day=1)  # Start-of-month date
-            bookings_sql = text(
-                f"SELECT SUM(c.TotalValue) "
-                f"FROM Contracts c "
-                f"WHERE c.ContractDate::DATE BETWEEN '{som_date}'::DATE AND '{date}'::DATE"
-                + where_clause
-            )
-            bookings_result = conn.execute(bookings_sql, {'som_date': som_date, 'eom_date': date}).fetchone()
-            bookings_value = bookings_result[0] if bookings_result[0] is not None else 0
-            df.at[date, 'Bookings'] = bookings_value
-
-            # Create the SQL query for ARR
-            arr_sql = text(
-                f"SELECT SUM(s.SegmentValue * (12 / ROUND(EXTRACT(EPOCH FROM AGE(s.SegmentEndDate, s.SegmentStartDate)) / 3600 / 24 / 30)))"
-                f"FROM Segments s "
-                f"JOIN Contracts c ON s.ContractID = c.ContractID "
-                f"WHERE s.Type = 'Subscription' "
-                f"AND '{date}'::DATE BETWEEN c.TermStartDate::DATE AND s.SegmentEndDate::DATE"
-                + where_clause
-            )
-        
-            # Execute ARR SQL
-            arr_result = conn.execute(arr_sql, {'date': date}).fetchone()
-            arr_value = arr_result[0] if arr_result[0] is not None else 0
-            df.at[date, 'ARR'] = arr_value
-        
-            # Create the SQL query for CARR
-            carr_sql = text(
-                f"WITH RenewedContracts AS ("
-                f"  SELECT ContractID, RenewalFromContractID, ContractDate "
-                f"  FROM Contracts "
-                f"  WHERE RenewalFromContractID IS NOT NULL"
-                f"), "
-                f"ValidContracts AS ("
-                f"  SELECT c.ContractID, c.CustomerID "
-                f"  FROM Contracts c "
-                f"  LEFT JOIN Segments s ON c.ContractID = s.ContractID "
-                f"  LEFT JOIN RenewedContracts r ON c.ContractID = r.RenewalFromContractID "
-                f"  WHERE '{date}'::DATE <= COALESCE(r.ContractDate::DATE, '{date}'::DATE + 1) "
-                f"  AND '{date}'::DATE BETWEEN c.ContractDate::DATE AND s.SegmentEndDate::DATE "
-                f") "
-                f"SELECT SUM(s.SegmentValue * (12 / ROUND(EXTRACT(EPOCH FROM AGE(s.SegmentEndDate, s.SegmentStartDate)) / 3600 / 24 / 30)))"
-                f"FROM Segments s "
-                f"JOIN ValidContracts vc ON s.ContractID = vc.ContractID "
-                f"WHERE s.Type = 'Subscription'"
-                + where_clause.replace('c.', 'vc.')
-            )
-            
-            carr_result = conn.execute(carr_sql, {'date': date}).fetchone()
-            carr_value = carr_result[0] if carr_result[0] is not None else 0
-            df.at[date, 'CARR'] = carr_value
-
     df = df.astype(float)
     df = df.round(1)
     return df
@@ -148,17 +190,34 @@ def populate_revenue_df(start_date, end_date, type, engine, customer=None, contr
         # Populate DataFrame with active revenue
         for d in date_list:
             for customer in customer_names:
-                query_str = (
-                    f"SELECT SUM(s.SegmentValue / "
-                    f"ROUND(EXTRACT(EPOCH FROM AGE(s.SegmentEndDate, s.SegmentStartDate)) / 3600 / 24 / 30)) "
-                    f"FROM Segments s "
-                    f"JOIN Contracts c ON s.ContractID = c.ContractID "
-                    f"JOIN Customers cu ON c.CustomerID = cu.CustomerID "
-                    f"WHERE '{d}' BETWEEN s.SegmentStartDate AND s.SegmentEndDate "
-                    f"AND cu.Name = '{customer}'"
-                    f"AND s.Type = 'Subscription'"
+                query_str = f"""
+                WITH MaxTermStart AS (
+                SELECT
+                c.CustomerID,
+                MAX(c.TermStartDate) AS MaxStartDate
+                FROM
+                Contracts c
+                WHERE
+                c.TermStartDate <= '{d}'
+                GROUP BY
+                c.CustomerID
                 )
-
+                SELECT
+                SUM(s.SegmentValue / ROUND(EXTRACT(EPOCH FROM AGE(s.SegmentEndDate, s.SegmentStartDate)) / 3600 / 24 / 30))
+                FROM
+                Segments s
+                JOIN
+                Contracts c ON s.ContractID = c.ContractID
+                JOIN
+                MaxTermStart mts ON c.CustomerID = mts.CustomerID
+                JOIN
+                Customers cu ON c.CustomerID = cu.CustomerID
+                WHERE
+                '{d}' BETWEEN s.SegmentStartDate AND s.SegmentEndDate
+                AND cu.Name = '{customer}'
+                AND s.Type = 'Subscription'
+                AND c.TermStartDate = mts.MaxStartDate
+                """
                 # Add contract filter if specified
                 if contract is not None:
                     query_str += f"AND c.ContractID = '{contract}'"

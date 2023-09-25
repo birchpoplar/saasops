@@ -4,6 +4,7 @@ from rich.console import Console
 from datetime import date, datetime, timedelta
 from typing import Optional
 import calendar
+import os
 
 app = Typer(name="saasops")
 

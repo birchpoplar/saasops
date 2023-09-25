@@ -24,3 +24,4 @@ def populate_bkings_carr_arr_df(start_date, end_date, engine, customer=None, con
         # Add one month to get the next start_date
         current_date = eom_date + rd.relativedelta(days=1)
 ```
+	

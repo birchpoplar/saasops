@@ -68,7 +68,8 @@ def populate_bkings_carr_arr_df(start_date, end_date, engine, customer=None, con
     # ========================
     # Get CARRARR source data
     df_carrarr = generate_subscription_data_table(engine)
-    
+
+    # Calculate ARR
     # loop over date_list and populate df in the ARR column with the annual value of each contract where the date in date_list is between the segmentstartdate and segmentenddate (inclusive)
     for d in date_list:
         d_datetime = pd.Timestamp(d)
@@ -77,13 +78,35 @@ def populate_bkings_carr_arr_df(start_date, end_date, engine, customer=None, con
         # Sum the annual value for the month of d
         df.at[d, 'ARR'] = contracts['annualvalue'].sum()
 
-    # loop over date_list and populate df in the CARR column with the annual value of each contract where the date in date_list is between the contractdate and segmentenddate (inclusive)
+    # Calculate CARR
     for d in date_list:
         d_datetime = pd.Timestamp(d)
-        # Get contracts that are active for the month of d
-        contracts = df_carrarr.loc[(df_carrarr['contractdate'] <= d_datetime) & (df_carrarr['segmentenddate'] >= d_datetime)]
-        # Sum the annual value for the month of d
-        df.at[d, 'CARR'] = contracts['annualvalue'].sum()
+        
+        # Initial set of contracts valid for the date
+        valid_contracts = df_carrarr[(df_carrarr['contractdate'] <= d_datetime) & (df_carrarr['segmentenddate'] >= d_datetime)].copy()
+
+        # Cycle through the valid contracts, and for any contract that has a renewal contract, check if the renewal contract has a higher annual value. If so, set the annual value of the current contract to 0, as the renewal contract takes precedence. if the renewal contract has a lower annual value, then set the annual value of the renewal contract to 0, as the current contract takes precedence.
+        for idx, row in valid_contracts.iterrows():
+            if not pd.isnull(row['renewalfromcontractid']):
+                # Use .loc to get the exact renewal contract
+                renewal_contract_df = valid_contracts.loc[valid_contracts['contract id'] == row['renewalfromcontractid']]
+                if renewal_contract_df.empty:
+                    continue
+                renewal_contract = renewal_contract_df.iloc[0]
+                if renewal_contract['annualvalue'] > row['annualvalue']:
+                    valid_contracts.loc[idx, 'annualvalue'] = 0
+                else:
+                    valid_contracts.loc[valid_contracts['contract id'] == renewal_contract['contract id'], 'annualvalue'] = 0
+
+        # Compute CARR for the date
+        df.at[d, 'CARR'] = valid_contracts['annualvalue'].sum()
+        
+    # for d in date_list:
+    #     d_datetime = pd.Timestamp(d)
+    #     # Get contracts that are active for the month of d
+    #     contracts = df_carrarr.loc[(df_carrarr['contractdate'] <= d_datetime) & (df_carrarr['segmentenddate'] >= d_datetime)]
+    #     # Sum the annual value for the month of d
+    #     df.at[d, 'CARR'] = contracts['annualvalue'].sum()
 
     df = df.astype(float)
     df = df.round(1)

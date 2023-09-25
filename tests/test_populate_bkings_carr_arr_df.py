@@ -76,7 +76,7 @@ def test_populate_bkings_carr_arr_df_case3(db_engine_case3):
     # Generate expected data
     bookings_data = [0]*4 + [120000.0] + [0]*11 + [60000.0] + [0]*7
     arr_data = [0]*5 + [120000.0]*12 + [60000.0]*7
-    carr_data = [0]*4 + [120000.0]*12 + [60000.0]*8
+    carr_data = [0]*4 + [120000.0]*13 + [60000.0]*7
 
     expected_data_dict = {
         'Bookings': bookings_data,

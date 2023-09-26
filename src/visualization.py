@@ -279,7 +279,7 @@ def create_monthly_mrr_chart(engine, start_date, end_date, customer=None, contra
     plt.savefig("exports/monthly_mrr.png", dpi=300)
 
 
-def create_bookings_arr_carr_chart(engine, start_date, end_date, customer=None, contract=None):
+def create_bookings_arr_carr_chart(engine, start_date, end_date, customer=None, contract=None, show_gridlines=False):
 
     console = Console()
     print_status(console, f"Creating bookings, ARR, and CARR chart between {start_date} and {end_date}", MessageStyle.INFO)
@@ -315,6 +315,11 @@ def create_bookings_arr_carr_chart(engine, start_date, end_date, customer=None, 
     # Set thousands formatter for y-axis
     ax.yaxis.set_major_formatter(FuncFormatter(thousands_formatter))
 
+    # Add gridlines if the show_gridlines argument is set to True
+    if show_gridlines:
+        ax.grid(which='major', axis='y', linestyle='--', linewidth=0.5)
+        ax.grid(which='major', axis='x', linestyle='--', linewidth=0.5)
+    
     # Annotate the top of the 'Bookings' bars
     for bar in bars:
         height = bar.get_height()

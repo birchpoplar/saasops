@@ -108,6 +108,8 @@ def contupd(contract_id: int, field: str, value: str):
     """
     console = Console()
     engine = database.connect_database(console)
+    if field == 'renewalfromcontractid' and value.lower() == 'none':
+        value = None
     print(database.update_contract(engine, contract_id, field, value))
 
 @contract_app.command("print")

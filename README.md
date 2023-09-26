@@ -1,5 +1,14 @@
 # SaaSOps - SaaS Metrics Environment
-Track Customers, Contracts, Revenue Segments and Invoices for SaaS finance administration. Generates recognized revenue, MRR, ARR and associated metrics for chosen time period. Output tables and charts to terminal or export to XLSX or PPTX.
+Track Customers, Contracts, Revenue Segments and Invoices for SaaS administration and metrics reporting. Generates recognized revenue, MRR, ARR and associated metrics for chosen time period. Output tables and charts to terminal or export to XLSX or PPTX.
+## Objectives
+- Offer a platform for tracking customer and contract activity. Intended primarily for early-stage startup execs,
+- Help achieve universal agreement in SaaS metrics reporting across exec, ops and finance functions, such agreement being critical for reporting to investors.
+- 
+
+## Design approach
+- **Why Open Source** - finance and finance-related functions in startups are mostly dependent upon either closed-source ledger and workflow tools or spreadsheet platforms. 
+- **Why CLI?** - easy to get to a first working app, and for early-stage B2B startups the volume of contract activity tends to be low enough such that CLI poses little impact on productivity. An API and browser UI/UX can be added later once main platform sufficiently developed
+
 ## Demo: Adding Customers, Contracts and Segments
 https://github.com/birchpoplar/saasops/assets/4149682/c59e6287-323c-464e-a986-887f45488c54
 ## Demo: Generating Metrics Reports

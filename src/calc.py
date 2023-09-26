@@ -58,6 +58,12 @@ def populate_bkings_carr_arr_df(start_date, end_date, engine, customer=None, con
     # Convert 'contractdate' column to datetime
     df_bookings['contractdate'] = pd.to_datetime(df_bookings['contractdate'])
 
+    # Filter by customer and contract
+    if customer:
+        df_bookings = df_bookings[df_bookings['customer id'] == customer]
+    if contract:
+        df_bookings = df_bookings[df_bookings['contract id'] == contract]
+    
     # loop over date_list and populate df in the Bookings column, by adding in the contract value for each contract that has the same month and year as the date in date_list
     for d in date_list:
         # Get bookings for the month of d
@@ -69,6 +75,12 @@ def populate_bkings_carr_arr_df(start_date, end_date, engine, customer=None, con
     # Get CARRARR source data
     df_carrarr = generate_subscription_data_table(engine)
 
+    # Filter by customer and contract
+    if customer:
+        df_carrarr = df_carrarr[df_carrarr['customer id'] == customer]
+    if contract:
+        df_carrarr = df_carrarr[df_carrarr['contract id'] == contract]
+    
     # Calculate ARR
     # loop over date_list and populate df in the ARR column with the annual value of each contract where the date in date_list is between the segmentstartdate and segmentenddate (inclusive)
     for d in date_list:
@@ -176,7 +188,15 @@ def populate_revenue_df(start_date, end_date, type, engine, customer=None, contr
     # ========================
     # Get revenue source data
     df_revenue = generate_subscription_data_table(engine)
+    
+    # Filter by customer ID if provided
+    if customer:
+        df_revenue = df_revenue[df_revenue['customer id'] == customer]
 
+        # Filter by contract ID if provided
+    if contract:
+        df_revenue = df_revenue[df_revenue['contract id'] == contract]
+        
     # loop over date_list and customer name and populate df in a column with customer name the revenue for the customer where the date in date_list is between the segmentstartdate and segmentenddate (inclusive), the revenue being calculated as the annual value divided by contract length in months
     # ...
     for d in date_list:

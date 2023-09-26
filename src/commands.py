@@ -1,5 +1,6 @@
 from src import database, display, export, calc
 from typer import Typer
+import typer
 from rich.console import Console
 from datetime import date, datetime, timedelta
 from typing import Optional
@@ -332,7 +333,13 @@ def exportall(start_date: str, end_date: str):
     export.export_data_to_xlsx(engine, start_date, end_date)
 
 @export_app.command("charts")
-def exportcharts(start_date: str, end_date: str, customer: Optional[int]=None, contract: Optional[int]=None):
+def exportcharts(
+        start_date: str,
+        end_date: str,
+        customer: Optional[int]=None,
+        contract: Optional[int]=None,
+        show_gridlines: bool = typer.Option(False, "--show-gridlines", help="Show gridlines on charts")
+):
     """
     Export all charts to image files.
     """
@@ -340,4 +347,4 @@ def exportcharts(start_date: str, end_date: str, customer: Optional[int]=None, c
     engine = database.connect_database(console)
     start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
     end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
-    export.export_chart_images(engine, start_date, end_date, customer, contract)
+    export.export_chart_images(engine, start_date, end_date, customer, contract, show_gridlines)

@@ -206,7 +206,7 @@ def create_mrr_change_chart(engine, start_date, end_date, customer=None, contrac
     plt.savefig("exports/mrr_change.png", dpi=300)
 
 
-def create_monthly_mrr_chart(engine, start_date, end_date, customer=None, contract=None):
+def create_monthly_mrr_chart(engine, start_date, end_date, customer=None, contract=None, show_gridlines=False):
 
     console = Console()
     print_status(console, f"Creating monthly MRR chart between {start_date} and {end_date}", MessageStyle.INFO)
@@ -265,6 +265,11 @@ def create_monthly_mrr_chart(engine, start_date, end_date, customer=None, contra
 
     # Set y-axis min and max values based on the rounded maximum absolute value
     ax.set_ylim(-rounded_max_abs_value, rounded_max_abs_value)
+    
+    # Add gridlines if the show_gridlines argument is set to True
+    if show_gridlines:
+        ax.grid(which='major', axis='y', linestyle='--', linewidth=0.5)
+        ax.grid(which='major', axis='x', linestyle='--', linewidth=0.5)
     
     # Add a horizontal line at y=0
     ax.axhline(0, color='black', linewidth=0.8)

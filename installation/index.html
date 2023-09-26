@@ -9,20 +9,22 @@
       
       
       
+        <link rel="prev" href="..">
       
-        <link rel="next" href="installation/">
+      
+        <link rel="next" href="../data_structure/">
       
       
-      <link rel="icon" href="assets/images/favicon.png">
+      <link rel="icon" href="../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.4.2">
     
     
       
-        <title>SaaSOps Docs</title>
+        <title>Installation - SaaSOps Docs</title>
       
     
     
-      <link rel="stylesheet" href="assets/stylesheets/main.d451bc0e.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.d451bc0e.min.css">
       
       
 
@@ -41,7 +43,7 @@
       
     
     
-    <script>__md_scope=new URL(".",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -63,7 +65,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#welcome-to-saasops-documentation" class="md-skip">
+        <a href="#installing-saasops" class="md-skip">
           Skip to content
         </a>
       
@@ -79,7 +81,7 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="." title="SaaSOps Docs" class="md-header__button md-logo" aria-label="SaaSOps Docs" data-md-component="logo">
+    <a href=".." title="SaaSOps Docs" class="md-header__button md-logo" aria-label="SaaSOps Docs" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
@@ -99,7 +101,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Home
+              Installation
             
           </span>
         </div>
@@ -171,7 +173,7 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="." title="SaaSOps Docs" class="md-nav__button md-logo" aria-label="SaaSOps Docs" data-md-component="logo">
+    <a href=".." title="SaaSOps Docs" class="md-nav__button md-logo" aria-label="SaaSOps Docs" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
@@ -181,6 +183,25 @@
   </label>
   
   <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Home
+  </span>
+  
+
+      </a>
+    </li>
+  
+
     
       
       
@@ -201,18 +222,18 @@
           
   
   <span class="md-ellipsis">
-    Home
+    Installation
   </span>
   
 
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <a href="." class="md-nav__link md-nav__link--active">
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
-    Home
+    Installation
   </span>
   
 
@@ -234,8 +255,22 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#main-page-topics" class="md-nav__link">
-    Main Page Topics
+  <a href="#cloning-repo" class="md-nav__link">
+    Cloning repo
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#installing-and-setting-up-postgresql" class="md-nav__link">
+    Installing and setting up PostgreSQL
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#checking-using-pytest" class="md-nav__link">
+    Checking using pytest
   </a>
   
 </li>
@@ -254,26 +289,7 @@
   
   
     <li class="md-nav__item">
-      <a href="installation/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Installation
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="data_structure/" class="md-nav__link">
+      <a href="../data_structure/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -313,8 +329,22 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#main-page-topics" class="md-nav__link">
-    Main Page Topics
+  <a href="#cloning-repo" class="md-nav__link">
+    Cloning repo
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#installing-and-setting-up-postgresql" class="md-nav__link">
+    Installing and setting up PostgreSQL
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#checking-using-pytest" class="md-nav__link">
+    Checking using pytest
   </a>
   
 </li>
@@ -334,17 +364,23 @@
                   
 
 
-<h1 id="welcome-to-saasops-documentation">Welcome to SaaSOps Documentation</h1>
-<p>Repo located <a href="https://github.com/birchpoplar/saasops">here</a></p>
-<h2 id="main-page-topics">Main Page Topics</h2>
-<ul>
-<li><a href="installation/">Installation</a></li>
-<li>Data structure description</li>
-<li>Setting up the Database and environment</li>
-<li>Adding Customers, Contracts, Segments and Invoices</li>
-<li>Running CLI analyses</li>
-<li>Exporting to images and PPTX</li>
-</ul>
+<h1 id="installing-saasops">Installing SaaSOps</h1>
+<h2 id="cloning-repo">Cloning repo</h2>
+<p>The best approach currently to installing SaaSOps is to clone the repo located <a href="https://github.com/birchpoplar/saasops">here</a>.</p>
+<p>Once cloned, run the following in the root folder of the repo:</p>
+<pre><code>$ pipenv shell
+$ pipenv install
+</code></pre>
+<h2 id="installing-and-setting-up-postgresql">Installing and setting up PostgreSQL</h2>
+<pre><code>$ sudo apt install postgresql
+</code></pre>
+<p>using psql with sudo
+setting up template db for testing copy</p>
+<h2 id="checking-using-pytest">Checking using pytest</h2>
+<p>Best next step to check everything is working is to run:</p>
+<pre><code>$ pytest
+</code></pre>
+<p>and check that everything tested out correctly.</p>
 
 
 
@@ -382,10 +418,10 @@
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": ".", "features": [], "search": "assets/javascripts/workers/search.a264c092.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    <script id="__config" type="application/json">{"base": "..", "features": [], "search": "../assets/javascripts/workers/search.a264c092.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
     
     
-      <script src="assets/javascripts/bundle.726fbb30.min.js"></script>
+      <script src="../assets/javascripts/bundle.726fbb30.min.js"></script>
       
     
   </body>

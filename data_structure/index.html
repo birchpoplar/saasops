@@ -9,7 +9,7 @@
       
       
       
-        <link rel="prev" href="..">
+        <link rel="prev" href="../installation/">
       
       
       
@@ -18,7 +18,7 @@
     
     
       
-        <title>New Page - SaaSOps Docs</title>
+        <title>Data Structure - SaaSOps Docs</title>
       
     
     
@@ -63,7 +63,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#testing-new-page-stuff" class="md-skip">
+        <a href="#data-structure-definitions" class="md-skip">
           Skip to content
         </a>
       
@@ -99,7 +99,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              New Page
+              Data Structure
             
           </span>
         </div>
@@ -205,6 +205,25 @@
       
   
   
+  
+    <li class="md-nav__item">
+      <a href="../installation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Installation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
     
   
   
@@ -216,15 +235,66 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Data Structure
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
-    New Page
+    Data Structure
   </span>
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#database-structure" class="md-nav__link">
+    Database Structure
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#understanding-segments" class="md-nav__link">
+    Understanding Segments
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#database-diagram" class="md-nav__link">
+    Database Diagram
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -250,6 +320,35 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#database-structure" class="md-nav__link">
+    Database Structure
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#understanding-segments" class="md-nav__link">
+    Understanding Segments
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#database-diagram" class="md-nav__link">
+    Database Diagram
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -263,9 +362,64 @@
                   
 
 
-<h1 id="testing-new-page-stuff">Testing new page stuff</h1>
-<p>More testing words etc.</p>
-<p><a href="../">Link back home</a></p>
+<h1 id="data-structure-definitions">Data Structure &amp; Definitions</h1>
+<h2 id="database-structure">Database Structure</h2>
+<p>The application uses a PostgreSQL database to store information on contracts, customers, segments and invoices:</p>
+<table>
+<thead>
+<tr>
+<th>Object</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Customer</td>
+<td>Customer name, city and state</td>
+</tr>
+<tr>
+<td>Contract</td>
+<td>Contract details, referencing customer ID and including information on reference, booked contract date, overall term start and end dates and total value. If the contract is a renewal of prior contract an optional field links to ID of prior contract.</td>
+</tr>
+<tr>
+<td>Segment</td>
+<td>Represents a single revenue component of the parent contract. May be a Subscription or Service component. Has a total value and a segment start and end date.</td>
+</tr>
+<tr>
+<td>Invoice</td>
+<td>Linked to one or more segments, and segments may have one or more invoices. Invoices also have typical data such as issue date, amount and days payable.</td>
+</tr>
+</tbody>
+</table>
+<p>This structure is described in greater detail below.</p>
+<h2 id="understanding-segments">Understanding Segments</h2>
+<p>A basic Contract often has two main components:</p>
+<ol>
+<li>Platform license subscription fee</li>
+<li>Installation and onboarding</li>
+</ol>
+<p>The Segment enables both of these components to be included in the database and helps ensure metrics and analysis output is based correctly on recurring and non-recurring revenue as appropriate.</p>
+<p>For each of the above, an individual Segment will be defined:</p>
+<ol>
+<li><strong>Platform Subscription</strong>, of type Subscription with start date, end date and total segment value</li>
+<li><strong>Installation Services</strong>, of type Services and perhaps just total segment value, depending on whether or not any date information is available.</li>
+</ol>
+<p>More complex Contracts may have multiple subscription components, each with different term dates and values. The Segment structure allows this detail to be captured.</p>
+<h2 id="database-diagram">Database Diagram</h2>
+<pre class="mermaid"><code>classDiagram
+    Customer &lt;|-- Contract
+    Contract &lt;|-- Segment
+    Segment &lt;|-- Invoice
+class Customer{
+    +int id
+    +String name
+    +String state
+    +String city
+}
+class Contract{
+    +int id
+    +String reference
+}</code></pre>
 
 
 

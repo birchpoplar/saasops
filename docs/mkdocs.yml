@@ -1,3 +1,14 @@
 site_name: SaaSOps Docs
+nav:
+   - Home: index.md
+   - Installation: installation.md
+   - Data Structure: data_structure.md
 theme:
-	name: 'material'
+   name: 'material'
+
+markdown_extensions:
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format

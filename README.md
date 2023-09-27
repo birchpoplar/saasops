@@ -1,13 +1,16 @@
-# SaaSOps - SaaS Metrics Environment
+# SaaSOps - SaaS Tracking & Metrics Analysis
 Track Customers, Contracts, Revenue Segments and Invoices for SaaS administration and metrics reporting. Generates recognized revenue, MRR, ARR and associated metrics for chosen time period. Output tables and charts to terminal or export to XLSX or PPTX.
 ## Objectives
-- Offer a platform for tracking customer and contract activity. Intended primarily for early-stage startup execs,
-- Help achieve universal agreement in SaaS metrics reporting across exec, ops and finance functions, such agreement being critical for reporting to investors.
-- 
+- **Offer a platform for tracking customer and contract activity.** Intended primarily for early-stage startup execs,
+- **Achieve consensus in SaaS metrics reporting across exec, ops and finance functions**, such agreement being critical for reporting to investors.
+- **Ensure correct comprehension and use of metrics.** All too often users of metrics, and those who report them, don't comprehend the actual defintion and so report inaccurately to stakeholders and investors.
+- **Bring the power of expanded metrics tracking to all users.** Some of the more complex metrics are challenging to produce reliably in spreadsheet environments, and lend themselves well to implementation in a programmed environment.
 
 ## Design approach
 - **Why Open Source** - finance and finance-related functions in startups are mostly dependent upon either closed-source ledger and workflow tools or spreadsheet platforms. 
 - **Why CLI?** - easy to get to a first working app, and for early-stage B2B startups the volume of contract activity tends to be low enough such that CLI poses little impact on productivity. An API and browser UI/UX can be added later once main platform sufficiently developed
+- **Reconciliation to accounting** - standard reports with recognized revenue enable reconciliation to accounting data.
+## Future 
 
 ## Demo: Adding Customers, Contracts and Segments
 https://github.com/birchpoplar/saasops/assets/4149682/c59e6287-323c-464e-a986-887f45488c54

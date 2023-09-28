@@ -38,4 +38,44 @@ It's necessary to link renewal contracts to ensure the metrics for expansion or 
 Check the contract was added correctly with:
 
 	$ saasops contract list
+
+## Adding Segments & Reconciling
+
+As with customers and contracts, segments can be added with:
+
+	$ saasops segment add 1 2022-05-01 2023-04-30 'Platform License' Subscription 120000
 	
+Check the addition with:
+
+	$ saasops segment list
+	
+An important step in finishing up on contract and segment entry is to confirm reconciliation between a contract and its associated segments. The total value of the contract should match the total aggregate value of the segments. The app includes a reporting command to aid in this reconciliation:
+
+	$ saasops contract reconcile 1
+	
+This command will output the contract details and then a table with the associated segments. The aggregate value of the segments is calculated and reported after the table.
+
+!!! warning
+    The app does not yet include an automated reconciliation feature, and so will not yet highlight instances where the total aggregate segment value is not equal to the contract value. At present this check must be done manually.
+
+## Adding Invoices
+
+To be completed.
+
+!!! note
+    The Invoice structure is included for future app expansion. The current metrics and output functions do not require invoice information.
+
+## Amending Data Inputs
+
+Any entry in any of the database tables can be updated to a new value using:
+
+	$ saasops TABLE update ID FIELD VALUE
+	
+For example:
+
+	$ saasops contract update 1 contractdate 2022-03-01
+	
+To move the booked date of our example contract above forward one month.
+
+Field names can be found in the `create_tables.sql` script in the `data/` folder.
+

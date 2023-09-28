@@ -5,9 +5,9 @@ Repo located [here](https://github.com/birchpoplar/saasops)
 ## Main Page Topics
 
 - [Installation](installation.md)
-- Data structure description
+- [Data structure description](data_structure.md)
 - Setting up the Database and environment
-- Adding Customers, Contracts, Segments and Invoices
+- [Adding Customers, Contracts, Segments and Invoices](managing_data.md)
 - Running CLI analyses
 - Exporting to images and PPTX
 

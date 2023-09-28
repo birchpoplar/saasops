@@ -11,6 +11,10 @@ Track Customers, Contracts, Revenue Segments and Invoices for SaaS administratio
 - **Why CLI?** - easy to get to a first working app, and for early-stage B2B startups the volume of contract activity tends to be low enough such that CLI poses little impact on productivity. An API and browser UI/UX can be added later once main platform sufficiently developed
 - **Reconciliation to accounting** - standard reports with recognized revenue enable reconciliation to accounting data.
 ## Future 
+To be added.
+
+## Documentation
+Current documentation can be found [here](https://birchpoplar.github.io/saasops/) on GitHub Pages.
 
 ## Demo: Adding Customers, Contracts and Segments
 https://github.com/birchpoplar/saasops/assets/4149682/c59e6287-323c-464e-a986-887f45488c54

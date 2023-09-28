@@ -9,10 +9,6 @@
       
       
       
-        <link rel="prev" href="..">
-      
-      
-        <link rel="next" href="../data_structure/">
       
       
       <link rel="icon" href="../assets/images/favicon.png">
@@ -20,7 +16,7 @@
     
     
       
-        <title>Installation - SaaSOps Docs</title>
+        <title>Managing Input Data - SaaSOps Docs</title>
       
     
     
@@ -65,7 +61,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#installing-saasops" class="md-skip">
+        <a href="#managing-input-data" class="md-skip">
           Skip to content
         </a>
       
@@ -101,7 +97,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Installation
+              Managing Input Data
             
           </span>
         </div>
@@ -207,29 +203,9 @@
       
   
   
-    
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  <span class="md-ellipsis">
-    Installation
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../installation/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -238,47 +214,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#cloning-repo" class="md-nav__link">
-    Cloning repo
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#installing-and-setting-up-postgresql" class="md-nav__link">
-    Installing and setting up PostgreSQL
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#checking-using-pytest" class="md-nav__link">
-    Checking using pytest
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -329,22 +264,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#cloning-repo" class="md-nav__link">
-    Cloning repo
+  <a href="#adding-customers" class="md-nav__link">
+    Adding Customers
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#installing-and-setting-up-postgresql" class="md-nav__link">
-    Installing and setting up PostgreSQL
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#checking-using-pytest" class="md-nav__link">
-    Checking using pytest
+  <a href="#adding-contracts" class="md-nav__link">
+    Adding Contracts
   </a>
   
 </li>
@@ -364,68 +292,36 @@
                   
 
 
-<h1 id="installing-saasops">Installing SaaSOps</h1>
-<h2 id="cloning-repo">Cloning repo</h2>
-<p>The best approach currently to installing SaaSOps is to clone the repo located <a href="https://github.com/birchpoplar/saasops">here</a>.</p>
-<p>Once cloned, run the following in the root folder of the repo:</p>
-<pre><code>$ pipenv shell
-$ pipenv install
+<h1 id="managing-input-data">Managing Input Data</h1>
+<p>Using the CLI the various input data can be added to the tables in the database.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The code examples below assume the app is executed with <code>saasops</code> achieved by an alias <code>alias saasops='python main.py'</code>. This achieves similar usability as if the app had been packaged with PyPI.</p>
+</div>
+<h2 id="adding-customers">Adding Customers</h2>
+<p>The help information including argument details can be accessed using:</p>
+<pre><code>$ saasops customer add --help
 </code></pre>
-<h2 id="installing-and-setting-up-postgresql">Installing and setting up PostgreSQL</h2>
-<pre><code>$ sudo apt install postgresql
+<p>A typical command to add a customer is below. Note that any arguments containing spaces and other punctuation should be surrounded in quotes to be recognized as a <code>String</code>:</p>
+<pre><code>$ saasops customer add 'Customer Name' City State
 </code></pre>
-<p>using psql with sudo
-setting up template db for testing copy</p>
-<h2 id="checking-using-pytest">Checking using pytest</h2>
-<p>Best next step to check everything is working is to run:</p>
-<pre><code>$ pytest
+<p>Then run a command to list the customers to confirm the data added is as intended:</p>
+<pre><code>$ saasops customer list
 </code></pre>
-<p>and check that everything tested out correctly.</p>
-<h1 id="from-original-readmemd-may-need-to-go-in-separate-md-file-here">From original README.md - may need to go in separate .md file here</h1>
-<h2 id="setting-up-postgres-db">Setting up Postgres DB</h2>
-<p>Log into psql as admin user:</p>
-<ul>
-<li>CREATE DATABASE dbname;</li>
-<li>CREATE USER user WITH PASSWORD 'password';</li>
-<li>GRANT ALL PRIVILEGES ON DATABASE dbname TO user;</li>
-</ul>
-<p>Edit the .dir-locals.el file:</p>
-<p>;; set SQL login parameters</p>
-<p>((sql-mode . ((sql-postgres-login-params 
-  '((user :default "user")
-    (database :default "dbname")
-    (server :default "localhost")
-    (port :default 5432))))))</p>
-<p>Then open the create_tables.sql file, and hit y to load the directory local variables.</p>
-<h2 id="template-db-in-postgres-for-testing">Template DB in Postgres for testing</h2>
-<ul>
-<li>CREATE USER testuser with PASSWORD 'testuser';</li>
-<li>CREATE DATABASE template_test_db;</li>
-<li>GRANT ALL PRIVILEGES ON DATABASE template_test_db TO testuser;</li>
-<li>(in psql) ~\i create_tables.sql~</li>
-<li></li>
-<li>GRANT ALL PRIVILEGES ON DATABASE postgres TO testuser; (so can connect with an engine)</li>
-<li>ALTER USER testuser CREATEDB; to create new DBs</li>
-<li>ALTER DATABASE template_test_db OWNER TO testuser;</li>
-<li>ALTER TABLE (all_tables) OWNER TO testuser: -- Need to do this for the five tables)
-Should have this as an SQL script that user can call into psql to set up correctly</li>
-</ul>
-<p>also need template_customer_db - or maybe even just standard db template</p>
-<h2 id="sql-scripts">SQL scripts</h2>
-<ul>
-<li>create_tables.sql = creates the table structures in the DB</li>
-<li>sample_data.sql = populates tables with the sample data</li>
-<li>show_rows.sql = shows all rows in all tables</li>
-<li>delete_data.sql = delete all rows and tables in the DB</li>
-</ul>
-<h2 id="todos">TODOs</h2>
-<ol>
-<li>Move into a docker container for install</li>
-<li>make the app call the name only, not python + main.py</li>
-<li>add in color selection for charts with config load</li>
-<li>build in sanity/correctness checking on inputs, e.g. end date after start date etc.</li>
-<li>export pptx function should take input filename as argument</li>
-</ol>
+<h2 id="adding-contracts">Adding Contracts</h2>
+<p>Access the general help info with:</p>
+<pre><code>$ saasops contract add --help
+</code></pre>
+<p>Typical command to add a contract would be:</p>
+<pre><code>$ saasops contract add 1 ContractRef 2022-04-01 2022-05-01 2023-04-30 120000
+</code></pre>
+<p>Note that a contract that is a renewal of a prior contract can be linked using <code>renewal-id</code>:</p>
+<pre><code>$ saasops contract add 2 RenewalRef 2023-04-01 2023-05-01 2024-04-30 180000 --renewal-id 1
+</code></pre>
+<p>It's necessary to link renewal contracts to ensure the metrics for expansion or contraction are reported instead of new or churn.</p>
+<p>Check the contract was added correctly with:</p>
+<pre><code>$ saasops contract list
+</code></pre>
 
 
 

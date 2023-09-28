@@ -304,6 +304,27 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#adding-segments-reconciling" class="md-nav__link">
+    Adding Segments &amp; Reconciling
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adding-invoices" class="md-nav__link">
+    Adding Invoices
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#amending-data-inputs" class="md-nav__link">
+    Amending Data Inputs
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -348,6 +369,27 @@
         <li class="md-nav__item">
   <a href="#adding-contracts" class="md-nav__link">
     Adding Contracts
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adding-segments-reconciling" class="md-nav__link">
+    Adding Segments &amp; Reconciling
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adding-invoices" class="md-nav__link">
+    Adding Invoices
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#amending-data-inputs" class="md-nav__link">
+    Amending Data Inputs
   </a>
   
 </li>
@@ -397,6 +439,28 @@
 <p>Check the contract was added correctly with:</p>
 <pre><code>$ saasops contract list
 </code></pre>
+<h2 id="adding-segments-reconciling">Adding Segments &amp; Reconciling</h2>
+<p>As with customers and contracts, segments can be added with:</p>
+<pre><code>$ saasops segment add 1 2022-05-01 2023-04-30 'Platform License' Subscription 120000
+</code></pre>
+<p>Check the addition with:</p>
+<pre><code>$ saasops segment list
+</code></pre>
+<p>An important step in finishing up on contract and segment entry is to confirm reconciliation between a contract and its associated segments. The total value of the contract should match the total aggregate value of the segments. The app includes a reporting command to aid in this reconciliation:</p>
+<pre><code>$ saasops contract reconcile 1
+</code></pre>
+<p>This command will output the contract details and then a table with the associated segments. The aggregate value of the segments is calculated and reported after the table. A manual reconciliation can then be done to ensure all segments have been captured.</p>
+<h2 id="adding-invoices">Adding Invoices</h2>
+<p>To be completed.</p>
+<h2 id="amending-data-inputs">Amending Data Inputs</h2>
+<p>Any entry in any of the database tables can be updated to a new value using:</p>
+<pre><code>$ saasops TABLE update ID FIELD VALUE
+</code></pre>
+<p>For example:</p>
+<pre><code>$ saasops contract update 1 contractdate 2022-03-01
+</code></pre>
+<p>To move the booked date of our example contract above forward one month.</p>
+<p>Field names can be found in the <code>create_tables.sql</code> script in the <code>data/</code> folder.</p>
 
 
 

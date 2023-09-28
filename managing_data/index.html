@@ -449,9 +449,17 @@
 <p>An important step in finishing up on contract and segment entry is to confirm reconciliation between a contract and its associated segments. The total value of the contract should match the total aggregate value of the segments. The app includes a reporting command to aid in this reconciliation:</p>
 <pre><code>$ saasops contract reconcile 1
 </code></pre>
-<p>This command will output the contract details and then a table with the associated segments. The aggregate value of the segments is calculated and reported after the table. A manual reconciliation can then be done to ensure all segments have been captured.</p>
+<p>This command will output the contract details and then a table with the associated segments. The aggregate value of the segments is calculated and reported after the table.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The app does not yet include an automated reconciliation feature, and so will not yet highlight instances where the total aggregate segment value is not equal to the contract value. At present this check must be done manually.</p>
+</div>
 <h2 id="adding-invoices">Adding Invoices</h2>
 <p>To be completed.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+</div>
+<p>The Invoice structure is included for future app expansion. The current metrics and output functions do not require invoice information.</p>
 <h2 id="amending-data-inputs">Amending Data Inputs</h2>
 <p>Any entry in any of the database tables can be updated to a new value using:</p>
 <pre><code>$ saasops TABLE update ID FIELD VALUE

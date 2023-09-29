@@ -199,7 +199,7 @@ def create_mrr_change_chart(engine, start_date, end_date, customer=None, contrac
     ax.set_title('Change in MRR by Month', fontsize=16)
     ax.legend()
     ax.yaxis.set_major_formatter(FuncFormatter(thousands_formatter))
-    ax.set_ylim(-20000, 20000)  # Setting y-axis min and max values
+    ax.set_ylim(-40000, 40000)  # Setting y-axis min and max values
 
     # Add a horizontal line at y=0
     ax.axhline(0, color='black', linewidth=0.8)
@@ -241,7 +241,7 @@ def create_monthly_mrr_chart(engine, start_date, end_date, customer=None, contra
     ])
 
     # Round up the maximum absolute value to the nearest base
-    rounded_max_abs_value = round_up_to_base(max_abs_value, base=10000)
+    rounded_max_abs_value = round_up_to_base(max_abs_value, base=20000)
 
     # Color for the bars
     colors = [

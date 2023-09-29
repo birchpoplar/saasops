@@ -234,8 +234,8 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#main-page-topics" class="md-nav__link">
-    Main Page Topics
+  <a href="#main-topics" class="md-nav__link">
+    Main Topics
   </a>
   
 </li>
@@ -331,6 +331,44 @@
   
 
     
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="running_analyses/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Running Analyses
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="generating_exports/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Generating Exports
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -358,8 +396,8 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#main-page-topics" class="md-nav__link">
-    Main Page Topics
+  <a href="#main-topics" class="md-nav__link">
+    Main Topics
   </a>
   
 </li>
@@ -388,21 +426,26 @@
 
 <h1 id="welcome-to-saasops-documentation">Welcome to SaaSOps Documentation</h1>
 <p>Repo located <a href="https://github.com/birchpoplar/saasops">here</a></p>
-<h2 id="main-page-topics">Main Page Topics</h2>
+<h2 id="main-topics">Main Topics</h2>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The documentation is at an early stage of development and is not complete and may also not represent latest operation or functionality.</p>
+</div>
 <ul>
 <li><a href="installation/">Installation</a></li>
 <li><a href="data_structure/">Data structure description</a></li>
 <li><a href="setting_up/">Setting up the Database and environment</a></li>
 <li><a href="managing_data/">Adding Customers, Contracts, Segments and Invoices</a></li>
-<li>Running CLI analyses</li>
-<li>Exporting to images and PPTX</li>
+<li><a href="running_analyses/">Running metrics analyses</a></li>
+<li><a href="generating_exports/">Exporting to various formats</a></li>
+<li><a href="running_tests/">Running <code>pytest</code> tests</a></li>
 </ul>
 <h2 id="todos">TODOs</h2>
 <ol>
 <li>Move into a docker container for install</li>
-<li>make the app call the name only, not python + main.py</li>
+<li>make the app call the name only, not python + main.py, PyPI packaging</li>
 <li>add in color selection for charts with config load</li>
-<li>build in sanity/correctness checking on inputs, e.g. end date after start date etc.</li>
+<li>build in sanity/correctness checking on inputs, </li>
 <li>export pptx function should take input filename as argument</li>
 </ol>
 

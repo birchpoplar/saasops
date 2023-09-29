@@ -9,10 +9,10 @@
       
       
       
-        <link rel="prev" href="../data_structure/">
+        <link rel="prev" href="../managing_data/">
       
       
-        <link rel="next" href="../running_analyses/">
+        <link rel="next" href="../generating_exports/">
       
       
       <link rel="icon" href="../assets/images/favicon.png">
@@ -20,7 +20,7 @@
     
     
       
-        <title>Managing Data - SaaSOps Docs</title>
+        <title>Running Analyses - SaaSOps Docs</title>
       
     
     
@@ -65,7 +65,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#managing-input-data" class="md-skip">
+        <a href="#running-metrics-analyses" class="md-skip">
           Skip to content
         </a>
       
@@ -101,7 +101,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Managing Data
+              Running Analyses
             
           </span>
         </div>
@@ -264,6 +264,25 @@
       
   
   
+  
+    <li class="md-nav__item">
+      <a href="../managing_data/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Managing Data
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
     
   
   
@@ -279,7 +298,7 @@
           
   
   <span class="md-ellipsis">
-    Managing Data
+    Running Analyses
   </span>
   
 
@@ -290,7 +309,7 @@
         
   
   <span class="md-ellipsis">
-    Managing Data
+    Running Analyses
   </span>
   
 
@@ -312,36 +331,29 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#adding-customers" class="md-nav__link">
-    Adding Customers
+  <a href="#recognized-revenue-report" class="md-nav__link">
+    Recognized Revenue Report
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#adding-contracts" class="md-nav__link">
-    Adding Contracts
+  <a href="#bookings-carr-arr-report" class="md-nav__link">
+    Bookings, CARR &amp; ARR Report
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#adding-segments-reconciling" class="md-nav__link">
-    Adding Segments &amp; Reconciling
+  <a href="#mrr-inflowoutflow-report" class="md-nav__link">
+    MRR Inflow/Outflow Report
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#adding-invoices" class="md-nav__link">
-    Adding Invoices
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#amending-data-inputs" class="md-nav__link">
-    Amending Data Inputs
+  <a href="#snapshot-carr-arr" class="md-nav__link">
+    Snapshot CARR &amp; ARR
   </a>
   
 </li>
@@ -350,25 +362,6 @@
   
 </nav>
       
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../running_analyses/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Running Analyses
-  </span>
-  
-
-      </a>
     </li>
   
 
@@ -419,36 +412,29 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#adding-customers" class="md-nav__link">
-    Adding Customers
+  <a href="#recognized-revenue-report" class="md-nav__link">
+    Recognized Revenue Report
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#adding-contracts" class="md-nav__link">
-    Adding Contracts
+  <a href="#bookings-carr-arr-report" class="md-nav__link">
+    Bookings, CARR &amp; ARR Report
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#adding-segments-reconciling" class="md-nav__link">
-    Adding Segments &amp; Reconciling
+  <a href="#mrr-inflowoutflow-report" class="md-nav__link">
+    MRR Inflow/Outflow Report
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#adding-invoices" class="md-nav__link">
-    Adding Invoices
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#amending-data-inputs" class="md-nav__link">
-    Amending Data Inputs
+  <a href="#snapshot-carr-arr" class="md-nav__link">
+    Snapshot CARR &amp; ARR
   </a>
   
 </li>
@@ -468,66 +454,75 @@
                   
 
 
-<h1 id="managing-input-data">Managing Input Data</h1>
-<p>Using the CLI the various input data can be added to the tables in the database.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>The code examples below assume the app is executed with <code>saasops</code> achieved by an alias <code>alias saasops='python main.py'</code>. This achieves similar usability as if the app had been packaged with PyPI.</p>
-</div>
-<h2 id="adding-customers">Adding Customers</h2>
-<p>The help information including argument details can be accessed using:</p>
-<pre><code>$ saasops customer add --help
+<h1 id="running-metrics-analyses">Running Metrics Analyses</h1>
+<p>Each of the revenue and metrics reports can be filtered to specific customer or contract activity by passing flags to the commands as follows:</p>
+<pre><code>--customer ID
+--contract ID
 </code></pre>
-<p>A typical command to add a customer is below. Note that any arguments containing spaces and other punctuation should be surrounded in quotes to be recognized as a <code>String</code>:</p>
-<pre><code>$ saasops customer add 'Customer Name' City State
+<p>Passing either flag will limit the reports generated to the specified customer or contract ID. Both flags can be passed but the contract ID filter will override the customer.</p>
+<h2 id="recognized-revenue-report">Recognized Revenue Report</h2>
+<p>Recognized revenue reports can be run to reconcile with financial statements for consistency. Reports can be configured for end-of-month or middle-of-month timing.</p>
+<pre><code>$ saasops calc rev 2023-01-01 2023-12-31 mid
+$ saasops calc rev 2023-01-01 2023-12-31 end
 </code></pre>
-<p>Then run a command to list the customers to confirm the data added is as intended:</p>
-<pre><code>$ saasops customer list
+<p>Middle-of-month timing is often a good compromise as any segment with start date in first half of the month has a full month's revenue counted, and any segment with start date in the second half of the month has no revenue counted in that month with first full month recognized the following month. </p>
+<p>Report dates are updated depending on the <code>mid</code> or <code>end</code> flag passed to the command. Sample revenue report is below:</p>
+<div class="highlight"><pre><span></span><code>    Revenue, 2023-01-31 to 2023-06-30, type: end-month
+---------------------------------------------------------------------------------------------
+|                Customer | Jan-2023 | Feb-2023 | Mar-2023 | Apr-2023 | May-2023 | Jun-2023 |
+---------------------------------------------------------------------------------------------
+¦          CUSTOMER       ¦    23000 ¦    23000 ¦    23000 ¦    23000 ¦    23000 ¦    23000 ¦
++-------------------------+----------+----------+----------+----------+----------+----------¦
+¦          CUSTOMER       ¦        0 ¦        0 ¦        0 ¦        0 ¦        0 ¦        0 ¦
++-------------------------+----------+----------+----------+----------+----------+----------¦
+¦          CUSTOMER       ¦        0 ¦        0 ¦        0 ¦        0 ¦        0 ¦        0 ¦
++-------------------------+----------+----------+----------+----------+----------+----------¦
+¦          CUSTOMER       ¦        0 ¦        0 ¦     5660 ¦     5660 ¦     5660 ¦     5660 ¦
++-------------------------------------------------------------------------------------------+
+</code></pre></div>
+<h2 id="bookings-carr-arr-report">Bookings, CARR &amp; ARR Report</h2>
+<p>The report table showing bookings, CARR and ARR on a monthly basis (end-of-month timing) can be generated as follows:</p>
+<pre><code>$ saasops calc bkings 2023-03-01 2023-06-30
 </code></pre>
-<h2 id="adding-contracts">Adding Contracts</h2>
-<p>Access the general help info with:</p>
-<pre><code>$ saasops contract add --help
+<p>Sample report output is below:</p>
+<div class="highlight"><pre><span></span><code>Bookings, ARR and CARR, 2023-03-01 to 2023-06-30
+--------------------------------------------------------
+| Customer | Mar-2023 | Apr-2023 | May-2023 | Jun-2023 |
+--------------------------------------------------------
+¦ Bookings ¦    70000 ¦        0 ¦        0 ¦   400000 ¦
++----------+----------+----------+----------+----------¦
+¦      ARR ¦   301114 ¦   301114 ¦   301114 ¦   301114 ¦
++----------+----------+----------+----------+----------¦
+¦     CARR ¦   301114 ¦   301114 ¦   301114 ¦   701114 ¦
++------------------------------------------------------+
+</code></pre></div>
+<h2 id="mrr-inflowoutflow-report">MRR Inflow/Outflow Report</h2>
+<p>A table showing inflow and outflows of Monthly Recurring Revenue can be generated using the <code>metrics</code> subcommand:</p>
+<pre><code>$ saasops calc metrics 2023-03-01 2023-06-30
 </code></pre>
-<p>Typical command to add a contract would be:</p>
-<pre><code>$ saasops contract add 1 ContractRef 2022-04-01 2022-05-01 2023-04-30 120000
+<p>Starting MRR applies at the beginning of each month, and Ending MRR at the end of each month. New, Churn, Expansion and Contraction are reported as aggregate over each month. Sample report output is shown below:</p>
+<div class="highlight"><pre><span></span><code>Metrics, 2023-03-01 to 2023-06-30
+---------------------------------------------------------------
+|        Customer - Mar-2023 | Apr-2023 | May-2023 | Jun-2023 |
+---------------------------------------------------------------
+¦         New MRR ¦     5000 ¦        0 ¦        0 ¦        0 ¦
++-----------------+----------+----------+----------+----------¦
+¦       Churn MRR ¦        0 ¦     2500 ¦        0 ¦        0 ¦
++-----------------+----------+----------+----------+----------¦
+¦   Expansion MRR ¦        0 ¦     2000 ¦        0 ¦        0 ¦
++-----------------+----------+----------+----------+----------¦
+¦ Contraction MRR ¦        0 ¦        0 ¦        0 ¦     1000 ¦
++-----------------+----------+----------+----------+----------¦
+¦    Starting MRR ¦    10000 ¦    15000 ¦    14500 ¦    14500 ¦
++-----------------+----------+----------+----------+----------¦
+¦      Ending MRR ¦    15000 ¦    14500 ¦    14500 ¦    13500 ¦
++-------------------------------------------------------------+
+</code></pre></div>
+<h2 id="snapshot-carr-arr">Snapshot CARR &amp; ARR</h2>
+<p>Point in time reports for CARR and ARR, showing totals by Customer, can be generated as follows:</p>
+<pre><code>$ saasops calc carr 2023-06-30
+$ saasops calc arr 2023-06-30
 </code></pre>
-<p>Note that a contract that is a renewal of a prior contract can be linked using <code>renewal-id</code>:</p>
-<pre><code>$ saasops contract add 2 RenewalRef 2023-04-01 2023-05-01 2024-04-30 180000 --renewal-id 1
-</code></pre>
-<p>It's necessary to link renewal contracts to ensure the metrics for expansion or contraction are reported instead of new or churn.</p>
-<p>Check the contract was added correctly with:</p>
-<pre><code>$ saasops contract list
-</code></pre>
-<h2 id="adding-segments-reconciling">Adding Segments &amp; Reconciling</h2>
-<p>As with customers and contracts, segments can be added with:</p>
-<pre><code>$ saasops segment add 1 2022-05-01 2023-04-30 'Platform License' Subscription 120000
-</code></pre>
-<p>Check the addition with:</p>
-<pre><code>$ saasops segment list
-</code></pre>
-<p>An important step in finishing up on contract and segment entry is to confirm reconciliation between a contract and its associated segments. The total value of the contract should match the total aggregate value of the segments. The app includes a reporting command to aid in this reconciliation:</p>
-<pre><code>$ saasops contract reconcile 1
-</code></pre>
-<p>This command will output the contract details and then a table with the associated segments. The aggregate value of the segments is calculated and reported after the table.</p>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>The app does not yet include an automated reconciliation feature, and so will not yet highlight instances where the total aggregate segment value is not equal to the contract value. At present this check must be done manually.</p>
-</div>
-<h2 id="adding-invoices">Adding Invoices</h2>
-<p>To be completed.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>The Invoice structure is included for future app expansion. The current metrics and output functions do not require invoice information.</p>
-</div>
-<h2 id="amending-data-inputs">Amending Data Inputs</h2>
-<p>Any entry in any of the database tables can be updated to a new value using:</p>
-<pre><code>$ saasops TABLE update ID FIELD VALUE
-</code></pre>
-<p>For example:</p>
-<pre><code>$ saasops contract update 1 contractdate 2022-03-01
-</code></pre>
-<p>To move the booked date of our example contract above forward one month.</p>
-<p>Field names can be found in the <code>create_tables.sql</code> script in the <code>data/</code> folder.</p>
 
 
 

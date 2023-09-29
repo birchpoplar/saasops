@@ -2,6 +2,7 @@ site_name: SaaSOps Docs
 nav:
    - Home: index.md
    - Installation: installation.md
+   - Setting Up: setting_up.md
    - Data Structure: data_structure.md
    - Managing Data: managing_data.md
 theme:

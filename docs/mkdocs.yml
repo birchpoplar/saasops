@@ -5,6 +5,8 @@ nav:
    - Setting Up: setting_up.md
    - Data Structure: data_structure.md
    - Managing Data: managing_data.md
+   - Running Analyses: running_analyses.md
+   - Generating Exports: generating_exports.md
 theme:
    name: 'material'
 

@@ -9,10 +9,10 @@
       
       
       
-        <link rel="prev" href="..">
+        <link rel="prev" href="../installation/">
       
       
-        <link rel="next" href="../setting_up/">
+        <link rel="next" href="../data_structure/">
       
       
       <link rel="icon" href="../assets/images/favicon.png">
@@ -20,7 +20,7 @@
     
     
       
-        <title>Installation - SaaSOps Docs</title>
+        <title>Setting Up - SaaSOps Docs</title>
       
     
     
@@ -65,7 +65,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#installing-saasops" class="md-skip">
+        <a href="#setting-up-the-database-and-environment" class="md-skip">
           Skip to content
         </a>
       
@@ -101,7 +101,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Installation
+              Setting Up
             
           </span>
         </div>
@@ -207,6 +207,25 @@
       
   
   
+  
+    <li class="md-nav__item">
+      <a href="../installation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Installation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
     
   
   
@@ -222,7 +241,7 @@
           
   
   <span class="md-ellipsis">
-    Installation
+    Setting Up
   </span>
   
 
@@ -233,7 +252,7 @@
         
   
   <span class="md-ellipsis">
-    Installation
+    Setting Up
   </span>
   
 
@@ -255,22 +274,49 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#cloning-repo" class="md-nav__link">
-    Cloning repo
+  <a href="#creating-a-database" class="md-nav__link">
+    Creating a database
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#installing-and-setting-up-postgresql" class="md-nav__link">
-    Installing and setting up PostgreSQL
+  <a href="#configuring-the-app-environment" class="md-nav__link">
+    Configuring the app environment
+  </a>
+  
+    <nav class="md-nav" aria-label="Configuring the app environment">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#creating-env" class="md-nav__link">
+    Creating .env
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#setting-db_name" class="md-nav__link">
+    Setting DB_NAME
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuring-the-test-database" class="md-nav__link">
+    Configuring the test database
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#checking-using-pytest" class="md-nav__link">
-    Checking using pytest
+  <a href="#included-sql-scripts" class="md-nav__link">
+    Included SQL scripts
   </a>
   
 </li>
@@ -279,25 +325,6 @@
   
 </nav>
       
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../setting_up/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Setting Up
-  </span>
-  
-
-      </a>
     </li>
   
 
@@ -367,22 +394,49 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#cloning-repo" class="md-nav__link">
-    Cloning repo
+  <a href="#creating-a-database" class="md-nav__link">
+    Creating a database
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#installing-and-setting-up-postgresql" class="md-nav__link">
-    Installing and setting up PostgreSQL
+  <a href="#configuring-the-app-environment" class="md-nav__link">
+    Configuring the app environment
+  </a>
+  
+    <nav class="md-nav" aria-label="Configuring the app environment">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#creating-env" class="md-nav__link">
+    Creating .env
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#setting-db_name" class="md-nav__link">
+    Setting DB_NAME
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuring-the-test-database" class="md-nav__link">
+    Configuring the test database
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#checking-using-pytest" class="md-nav__link">
-    Checking using pytest
+  <a href="#included-sql-scripts" class="md-nav__link">
+    Included SQL scripts
   </a>
   
 </li>
@@ -402,23 +456,49 @@
                   
 
 
-<h1 id="installing-saasops">Installing SaaSOps</h1>
-<h2 id="cloning-repo">Cloning repo</h2>
-<p>The best approach currently to installing SaaSOps is to clone the repo located <a href="https://github.com/birchpoplar/saasops">here</a>.</p>
-<p>Once cloned, run the following in the root folder of the repo:</p>
-<pre><code>$ pipenv shell
-$ pipenv install
+<h1 id="setting-up-the-database-and-environment">Setting up the database and environment</h1>
+<h2 id="creating-a-database">Creating a database</h2>
+<p>PostgreSQL is used as the database back-end for the app. Assuming PostgreSQL is installed, the following command will open up the <code>psql</code> CLI tool for administering databases:</p>
+<pre><code>$ sudo -u postgres psql
 </code></pre>
-<h2 id="installing-and-setting-up-postgresql">Installing and setting up PostgreSQL</h2>
-<pre><code>$ sudo apt install postgresql
+<p>Note this logs into psql as user <code>postgres</code>. Some extra commands, explained below, are needed to configure user rights correctly for the app. The following SQL statements will then create the database:</p>
+<div class="highlight"><pre><span></span><code><span class="k">CREATE</span><span class="w"> </span><span class="k">DATABASE</span><span class="w"> </span><span class="n">dbname</span><span class="p">;</span>
+<span class="k">CREATE</span><span class="w"> </span><span class="k">USER</span><span class="w"> </span><span class="n">username</span><span class="w"> </span><span class="k">WITH</span><span class="w"> </span><span class="n">PASSWORD</span><span class="w"> </span><span class="s1">&#39;password&#39;</span><span class="p">;</span>
+<span class="k">GRANT</span><span class="w"> </span><span class="k">ALL</span><span class="w"> </span><span class="k">PRIVILEGES</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="k">DATABASE</span><span class="w"> </span><span class="n">dbname</span><span class="w"> </span><span class="k">TO</span><span class="w"> </span><span class="n">username</span><span class="p">;</span>
+</code></pre></div>
+<h2 id="configuring-the-app-environment">Configuring the app environment</h2>
+<h3 id="creating-env">Creating <code>.env</code></h3>
+<p>A<code>.env</code> file in the root folder of the app specifies the various environment variables used to configure the app. The <code>.env</code> file should contain:</p>
+<div class="highlight"><pre><span></span><code>DB_HOST=localhost
+DB_USER=username
+DB_PASSWORD=password
+</code></pre></div>
+<p>Various authentication solutions can be implemented as well to maintain secrecy of the password as needed.</p>
+<h3 id="setting-db_name">Setting <code>DB_NAME</code></h3>
+<p>The remaining variable is <code>DB_NAME</code>, which can be specified in a <code>bash</code> shell, for example, as:</p>
+<pre><code>$ export DB_NAME=dbname
 </code></pre>
-<p>using psql with sudo
-setting up template db for testing copy</p>
-<h2 id="checking-using-pytest">Checking using pytest</h2>
-<p>Best next step to check everything is working is to run:</p>
-<pre><code>$ pytest
+<h2 id="configuring-the-test-database">Configuring the test database</h2>
+<p>The test fixtures and functions included with the app require a test database. The following SQL statements and <code>psql</code> commands will create the necessary structure:</p>
+<div class="highlight"><pre><span></span><code><span class="o">-</span><span class="w"> </span><span class="k">CREATE</span><span class="w"> </span><span class="k">USER</span><span class="w"> </span><span class="n">testuser</span><span class="w"> </span><span class="k">with</span><span class="w"> </span><span class="n">PASSWORD</span><span class="w"> </span><span class="s1">&#39;testuser&#39;</span><span class="p">;</span>
+<span class="o">-</span><span class="w"> </span><span class="k">CREATE</span><span class="w"> </span><span class="k">DATABASE</span><span class="w"> </span><span class="n">template_test_db</span><span class="p">;</span>
+<span class="o">-</span><span class="w"> </span><span class="k">GRANT</span><span class="w"> </span><span class="k">ALL</span><span class="w"> </span><span class="k">PRIVILEGES</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="k">DATABASE</span><span class="w"> </span><span class="n">template_test_db</span><span class="w"> </span><span class="k">TO</span><span class="w"> </span><span class="n">testuser</span><span class="p">;</span>
+</code></pre></div>
+<p>In <code>psql</code> run the following to create the table structure:</p>
+<pre><code>postgres# \i create_tables.sql
 </code></pre>
-<p>and check that everything tested out correctly.</p>
+<p>Then run the following SQL statements in <code>psql</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="o">-</span><span class="w"> </span><span class="k">ALTER</span><span class="w"> </span><span class="k">USER</span><span class="w"> </span><span class="n">testuser</span><span class="w"> </span><span class="k">CREATEDB</span><span class="p">;</span><span class="w"> </span><span class="k">to</span><span class="w"> </span><span class="k">create</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">DBs</span>
+<span class="o">-</span><span class="w"> </span><span class="k">ALTER</span><span class="w"> </span><span class="k">DATABASE</span><span class="w"> </span><span class="n">template_test_db</span><span class="w"> </span><span class="k">OWNER</span><span class="w"> </span><span class="k">TO</span><span class="w"> </span><span class="n">testuser</span><span class="p">;</span>
+<span class="o">-</span><span class="w"> </span><span class="k">ALTER</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="p">(</span><span class="n">all_tables</span><span class="p">)</span><span class="w"> </span><span class="k">OWNER</span><span class="w"> </span><span class="k">TO</span><span class="w"> </span><span class="n">testuser</span><span class="p">:</span><span class="w"> </span><span class="c1">-- Need to do this for the five tables)</span>
+</code></pre></div>
+<h2 id="included-sql-scripts">Included SQL scripts</h2>
+<p>The repo includes the following SQL scripts:</p>
+<ul>
+<li><strong>create_tables.sql</strong> = creates the table structures in the DB</li>
+<li><strong>show_rows.sql</strong> = shows all rows in all tables</li>
+<li><strong>delete_data.sql</strong> = delete all rows and tables in the DB</li>
+</ul>
 
 
 

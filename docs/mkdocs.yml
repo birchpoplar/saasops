@@ -2,7 +2,11 @@ site_name: SaaSOps Docs
 nav:
    - Home: index.md
    - Installation: installation.md
+   - Setting Up: setting_up.md
    - Data Structure: data_structure.md
+   - Managing Data: managing_data.md
+   - Running Analyses: running_analyses.md
+   - Generating Exports: generating_exports.md
 theme:
    name: 'material'
 
@@ -12,3 +16,6 @@ markdown_extensions:
         - name: mermaid
           class: mermaid
           format: !!python/name:pymdownx.superfences.fence_code_format
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences

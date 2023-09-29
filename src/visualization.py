@@ -270,7 +270,8 @@ def create_monthly_mrr_chart(engine, start_date, end_date, customer=None, contra
     ax.yaxis.set_major_formatter(FuncFormatter(thousands_formatter))
 
     # Set y-axis min and max values based on the rounded maximum absolute value
-    ax.set_ylim(-rounded_max_abs_value, rounded_max_abs_value)
+    ax.set_ylim(-20000, 60000)
+    # ax.set_ylim(-rounded_max_abs_value, rounded_max_abs_value)
     
     # Add gridlines if the show_gridlines argument is set to True
     if show_gridlines:

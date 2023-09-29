@@ -229,7 +229,7 @@ def delinvseg(invoice_segment_id: int):
 # Calculation commands
 
 @calc_app.command("bkings")
-def bkingsdf(start_date: str, end_date: str, customer: Optional[int]=None, contract: Optional[int]=None):
+def bkingsdf(start_date: str, end_date: str, customer: Optional[int]=None, contract: Optional[int]=None, frequency: Optional[str]='M'):
     """
     Print bookings, CARR and ARR dataframe.
     """
@@ -237,8 +237,8 @@ def bkingsdf(start_date: str, end_date: str, customer: Optional[int]=None, contr
     engine = database.connect_database(console)
     start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
     end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
-    df = calc.populate_bkings_carr_arr_df(start_date, end_date, engine, customer, contract)
-    df_title = f'Bookings, ARR and CARR, {start_date} to {end_date}'
+    df = calc.populate_bkings_carr_arr_df(start_date, end_date, engine, customer, contract, frequency)
+    df_title = f'Bookings, ARR and CARR, {start_date} to {end_date}, frequency: {frequency}'
     if customer:
         df_title += f', customer: {customer}'
     if contract:
@@ -251,7 +251,8 @@ def revdf(
         end_date: str,
         type: str,
         customer: Optional[int]=None,
-        contract: Optional[int]=None
+        contract: Optional[int]=None,
+        frequency: Optional[str]='M'
 ):
     """
     Print revenue dataframe.
@@ -260,7 +261,7 @@ def revdf(
     engine = database.connect_database(console)
     start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
     end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
-    df = calc.populate_revenue_df(start_date, end_date, type, engine, customer, contract)
+    df = calc.populate_revenue_df(start_date, end_date, type, engine, customer, contract, frequency)
     _, last_day_start = calendar.monthrange(start_date.year, start_date.month)
     _, last_day_end = calendar.monthrange(end_date.year, end_date.month)
     if type == 'mid':
@@ -281,7 +282,8 @@ def metricsdf(
         start_date: str,
         end_date: str,
         customer: Optional[int]=None,
-        contract: Optional[int]=None
+        contract: Optional[int]=None,
+        frequency: Optional[str]='M'
 ):
     """
     Print metrics dataframe.
@@ -290,8 +292,8 @@ def metricsdf(
     engine = database.connect_database(console)
     start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
     end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
-    df = calc.populate_metrics_df(start_date, end_date, engine, customer, contract)
-    df_title = f'Metrics, {start_date} to {end_date}'
+    df = calc.populate_metrics_df(start_date, end_date, engine, customer, contract, frequency)
+    df_title = f'Metrics, {start_date} to {end_date}, frequency: {frequency}'
     if customer:
         df_title += f', customer: {customer}'
     if contract:
@@ -340,7 +342,8 @@ def exportcharts(
         end_date: str,
         customer: Optional[int]=None,
         contract: Optional[int]=None,
-        show_gridlines: bool = typer.Option(False, "--show-gridlines", help="Show gridlines on charts")
+        show_gridlines: bool = typer.Option(False, "--show-gridlines", help="Show gridlines on charts"),
+        frequency: Optional[str]='M'
 ):
     """
     Export all charts to image files.
@@ -349,4 +352,4 @@ def exportcharts(
     engine = database.connect_database(console)
     start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
     end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
-    export.export_chart_images(engine, start_date, end_date, customer, contract, show_gridlines)
+    export.export_chart_images(engine, start_date, end_date, customer, contract, show_gridlines, frequency)

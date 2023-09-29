@@ -138,18 +138,21 @@ def ttm_ndr_gdr_chart(engine, target_date, customer=None, contract=None):
     plt.savefig("exports/trailing_12_month_values.png", dpi=300)
 
 
-def create_mrr_change_chart(engine, start_date, end_date, customer=None, contract=None):
+def create_mrr_change_chart(engine, start_date, end_date, customer=None, contract=None, frequency='M'):
 
     console = Console()
     print_status(console, f"Creating MRR change chart between {start_date} and {end_date}", MessageStyle.INFO)
-    metrics_df = calc.populate_metrics_df(start_date, end_date, engine, customer, contract)
+    metrics_df = calc.populate_metrics_df(start_date, end_date, engine, customer, contract, frequency=frequency)
 
     # Convert the index to DateTimeIndex if it's not already
-    if not isinstance(metrics_df.index, pd.DatetimeIndex):
-        metrics_df.index = pd.to_datetime(metrics_df.index)
+    #if not isinstance(metrics_df.index, pd.DatetimeIndex):
+    #    metrics_df.index = pd.to_datetime(metrics_df.index)
 
     # Formatting the index to Year-Month
-    months = metrics_df.index.strftime('%Y-%m')
+    if frequency == 'Q':
+        periods = metrics_df.index
+    else:
+        periods = metrics_df.index.strftime('%Y-%m')
 
     # Values for the bars
     new_mrr = metrics_df['New MRR']
@@ -171,10 +174,10 @@ def create_mrr_change_chart(engine, start_date, end_date, customer=None, contrac
     fig, ax = plt.subplots(figsize=(12, 8))
 
     # Plot the bars
-    ax.bar(months, new_mrr, color=colors[0], label='New MRR')
-    ax.bar(months, expansion_mrr, bottom=new_mrr, color=colors[1], label='Expansion MRR')
-    ax.bar(months, churn_mrr, color=colors[2], label='Churn MRR')
-    ax.bar(months, contraction_mrr, bottom=churn_mrr, color=colors[3], label='Contraction MRR')
+    ax.bar(periods, new_mrr, color=colors[0], label='New MRR')
+    ax.bar(periods, expansion_mrr, bottom=new_mrr, color=colors[1], label='Expansion MRR')
+    ax.bar(periods, churn_mrr, color=colors[2], label='Churn MRR')
+    ax.bar(periods, contraction_mrr, bottom=churn_mrr, color=colors[3], label='Contraction MRR')
 
     # Add data value annotations
     for i, (new, churn, expansion, contraction) in enumerate(zip(new_mrr, churn_mrr, expansion_mrr, contraction_mrr)):
@@ -188,11 +191,11 @@ def create_mrr_change_chart(engine, start_date, end_date, customer=None, contrac
             ax.text(i, churn + contraction/2, f"${-contraction/1000:,.0f}K", ha='center', va='center')
 
     # Add a line plot of aggregate MRR
-    ax.plot(months, aggregate_mrr, color=COLOR_MAP["navy_blue"], linestyle='--', marker='o', label='Aggregate MRR Change')
+    ax.plot(periods, aggregate_mrr, color=COLOR_MAP["navy_blue"], linestyle='--', marker='o', label='Aggregate MRR Change')
             
     # Labeling and formatting
     ax.set_ylabel('MRR', fontsize=14)
-    ax.set_xlabel('Month', fontsize=14)
+    ax.set_xlabel('Month' if frequency == 'M' else 'Quarter', fontsize=14)
     ax.set_title('Change in MRR by Month', fontsize=16)
     ax.legend()
     ax.yaxis.set_major_formatter(FuncFormatter(thousands_formatter))
@@ -201,23 +204,26 @@ def create_mrr_change_chart(engine, start_date, end_date, customer=None, contrac
     # Add a horizontal line at y=0
     ax.axhline(0, color='black', linewidth=0.8)
     
-    plt.xticks(rotation=45)
+    plt.xticks(rotation=45 if frequency == 'M' else 0)
     plt.tight_layout()
     plt.savefig("exports/mrr_change.png", dpi=300)
 
 
-def create_monthly_mrr_chart(engine, start_date, end_date, customer=None, contract=None, show_gridlines=False):
+def create_monthly_mrr_chart(engine, start_date, end_date, customer=None, contract=None, show_gridlines=False, frequency='M'):
 
     console = Console()
     print_status(console, f"Creating monthly MRR chart between {start_date} and {end_date}", MessageStyle.INFO)
-    metrics_df = calc.populate_metrics_df(start_date, end_date, engine, customer, contract)
+    metrics_df = calc.populate_metrics_df(start_date, end_date, engine, customer, contract, frequency=frequency)
 
     # Convert the index to DateTimeIndex if it's not already
-    if not isinstance(metrics_df.index, pd.DatetimeIndex):
-        metrics_df.index = pd.to_datetime(metrics_df.index)
+    #if not isinstance(metrics_df.index, pd.DatetimeIndex):
+    #    metrics_df.index = pd.to_datetime(metrics_df.index)
 
     # Formatting the index to Year-Month
-    months = metrics_df.index.strftime('%Y-%m')
+    if frequency == 'Q':
+        periods = metrics_df.index
+    else:
+        periods = metrics_df.index.strftime('%Y-%m')
 
     # Values for the bars
     starting_mrr = metrics_df['Starting MRR']
@@ -250,15 +256,15 @@ def create_monthly_mrr_chart(engine, start_date, end_date, customer=None, contra
     fig, ax = plt.subplots(figsize=(12, 8))
 
     # Plot the bars
-    ax.bar(months, starting_mrr, color=colors[0], label='Starting MRR')
-    ax.bar(months, new_mrr, bottom=starting_mrr, color=colors[1], label='New MRR')
-    ax.bar(months, expansion_mrr, bottom=starting_mrr + new_mrr, color=colors[2], label='Expansion MRR')
-    ax.bar(months, churn_mrr, color=colors[3], label='Churn MRR')
-    ax.bar(months, contraction_mrr, bottom=churn_mrr, color=colors[4], label='Contraction MRR')
+    ax.bar(periods, starting_mrr, color=colors[0], label='Starting MRR')
+    ax.bar(periods, new_mrr, bottom=starting_mrr, color=colors[1], label='New MRR')
+    ax.bar(periods, expansion_mrr, bottom=starting_mrr + new_mrr, color=colors[2], label='Expansion MRR')
+    ax.bar(periods, churn_mrr, color=colors[3], label='Churn MRR')
+    ax.bar(periods, contraction_mrr, bottom=churn_mrr, color=colors[4], label='Contraction MRR')
 
     # Labeling and formatting
     ax.set_ylabel('MRR', fontsize=14)
-    ax.set_xlabel('Month', fontsize=14)
+    ax.set_xlabel('Month' if frequency == 'M' else 'Quarter', fontsize=14)
     ax.set_title('Monthly MRR', fontsize=16)
     ax.legend()
     ax.yaxis.set_major_formatter(FuncFormatter(thousands_formatter))
@@ -274,23 +280,26 @@ def create_monthly_mrr_chart(engine, start_date, end_date, customer=None, contra
     # Add a horizontal line at y=0
     ax.axhline(0, color='black', linewidth=0.8)
 
-    plt.xticks(rotation=45)
+    plt.xticks(rotation=45 if frequency == 'M' else 0)
     plt.tight_layout()
     plt.savefig("exports/monthly_mrr.png", dpi=300)
 
 
-def create_bookings_arr_carr_chart(engine, start_date, end_date, customer=None, contract=None, show_gridlines=False):
+def create_bookings_arr_carr_chart(engine, start_date, end_date, customer=None, contract=None, show_gridlines=False, frequency='M'):
 
     console = Console()
     print_status(console, f"Creating bookings, ARR, and CARR chart between {start_date} and {end_date}", MessageStyle.INFO)
-    df = calc.populate_bkings_carr_arr_df(start_date, end_date, engine, customer, contract)
+    df = calc.populate_bkings_carr_arr_df(start_date, end_date, engine, customer, contract, frequency=frequency)
     
     # Convert the index to DateTimeIndex if it's not already
-    if not isinstance(df.index, pd.DatetimeIndex):
-        df.index = pd.to_datetime(df.index)
+    # if not isinstance(df.index, pd.DatetimeIndex):
+    #     df.index = pd.to_datetime(df.index)
     
     # Formatting the index to Year-Month
-    months = df.index.strftime('%Y-%m')
+    if frequency == 'Q':
+        periods = df.index
+    else:
+        periods = df.index.strftime('%Y-%m')
 
     # Values for the bars and lines
     bookings = df['Bookings']
@@ -300,14 +309,14 @@ def create_bookings_arr_carr_chart(engine, start_date, end_date, customer=None, 
     fig, ax = plt.subplots(figsize=(12, 8))
 
     # Create the bar chart for 'Bookings'
-    bars = ax.bar(months, bookings, color=COLOR_MAP["slate_blue"], label='Bookings')
+    bars = ax.bar(periods, bookings, color=COLOR_MAP["slate_blue"], label='Bookings')
 
     # Create line plots for 'ARR' and 'CARR'
-    ax.plot(months, carr, 'o-', label='CARR', color=COLOR_MAP["electric_green"])
-    ax.plot(months, arr, 'o-', label='ARR', color=COLOR_MAP["navy_blue"])
+    ax.plot(periods, carr, 'o-', label='CARR', color=COLOR_MAP["electric_green"])
+    ax.plot(periods, arr, 'o-', label='ARR', color=COLOR_MAP["navy_blue"])
 
     # Labeling and formatting
-    ax.set_xlabel('Month', fontsize=14, color='black')
+    ax.set_xlabel('Month' if frequency == 'M' else 'Quarter', fontsize=14, color='black')
     ax.set_ylabel('Values', fontsize=14, color='black')
     ax.set_title('Bookings, ARR, and CARR', fontsize=16)
     ax.tick_params(axis='both', labelcolor='black')
@@ -332,6 +341,6 @@ def create_bookings_arr_carr_chart(engine, start_date, end_date, customer=None, 
     # Add legend
     ax.legend(loc='upper left')
 
-    plt.xticks(rotation=45)
+    plt.xticks(rotation=45 if frequency == 'M' else 0)
     plt.tight_layout()
     plt.savefig("exports/bookings_arr_carr.png", dpi=300)

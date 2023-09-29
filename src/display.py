@@ -263,7 +263,11 @@ def print_dataframe(df, title, console: Console):
     table.add_column("Customer", justify="right")
     
     # Convert datetime index to formatted strings and add as columns
-    formatted_dates = [date.strftime("%b-%Y") for date in df.index]
+    if isinstance(df.index[0], (pd.Timestamp, pd.DatetimeIndex)):
+        formatted_dates = [date.strftime("%b-%Y") for date in df.index]
+    else:
+        formatted_dates = [str(date) for date in df.index]
+        
     for formatted_date in formatted_dates:
         table.add_column(formatted_date, justify="right")
     

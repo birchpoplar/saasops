@@ -11,7 +11,7 @@ import logging
 import calendar
 import numpy as np
 
-def populate_bkings_carr_arr_df(start_date, end_date, engine, customer=None, contract=None):
+def populate_bkings_carr_arr_df(start_date, end_date, engine, customer=None, contract=None, frequency='M'):
     """Generate a DataFrame with Bookings, ARR and CARR for each month."""
 
     console = Console()
@@ -122,10 +122,27 @@ def populate_bkings_carr_arr_df(start_date, end_date, engine, customer=None, con
 
     df = df.astype(float)
     df = df.round(1)
+
+    df.index = pd.to_datetime(df.index)
+
+    # check if quarterly
+    if frequency == 'Q':
+        # for Bookings we take the sum over the quarter
+        df['Bookings'] = df['Bookings'].resample('Q').sum()
+        # for ARR and CARR we take the last value of the quarter
+        df['ARR'] = df['ARR'].resample('Q').last()
+        df['CARR'] = df['CARR'].resample('Q').last()
+
+        # Reindexing the dataframe with the new quarterly indices
+        df = df.dropna().reindex(pd.date_range(start=start_date, end=end_date, freq='Q'))
+        
+        qtr_labels = [f"Q{period.quarter} {period.year}" for period in df.index]
+        df.index = qtr_labels
+        
     return df
 
 
-def populate_revenue_df(start_date, end_date, type, engine, customer=None, contract=None):
+def populate_revenue_df(start_date, end_date, type, engine, customer=None, contract=None, frequency='M'):
     """Populate a DataFrame with active revenue for each customer in each month. The days of the month on each of start_date and end_date are ignored in the creation of date_list that has middle or end of month days only, depending on the string value of type."""
 
     console = Console()
@@ -216,9 +233,15 @@ def populate_revenue_df(start_date, end_date, type, engine, customer=None, contr
         
     df = df.astype(float)
     df = df.round(1)
+    df.index = pd.to_datetime(df.index)
+
+    if frequency == 'Q':
+        df = df.resample('Q').sum()
+        df.index = [f"Q{period.quarter} {period.year}" for period in df.index]
+
     return df
 
-def populate_metrics_df(start_date, end_date, engine, customer=None, contract=None):
+def populate_metrics_df(start_date, end_date, engine, customer=None, contract=None, frequency='M'):
     """Populate a DataFrame with metrics for each month in the date range. Note that the days of the month on each of start_date and end_date are ignored in the creation of date_list that has end of month days only."""
 
     console = Console()
@@ -262,7 +285,6 @@ def populate_metrics_df(start_date, end_date, engine, customer=None, contract=No
     # Calculate and populate metrics for the second DataFrame
     previous_month = None
     for d in date_list:
-
         # Initialize the metrics sums
         new_mrr_sum = 0
         churn_mrr_sum = 0
@@ -274,8 +296,8 @@ def populate_metrics_df(start_date, end_date, engine, customer=None, contract=No
             starting_mrr_sum = ending_mrr_sum
             
             for customer in customer_names:
-                previous_month_revenue = revenue_df.loc[previous_month, customer]
-                current_month_revenue = revenue_df.loc[d, customer]
+                previous_month_revenue = revenue_df.loc[pd.Timestamp(previous_month), customer]
+                current_month_revenue = revenue_df.loc[pd.Timestamp(d), customer]
                 
                 new_mrr_sum += current_month_revenue if previous_month_revenue == 0 and current_month_revenue > 0 else 0
                 churn_mrr_sum += previous_month_revenue if previous_month_revenue > 0 and current_month_revenue == 0 else 0
@@ -290,8 +312,8 @@ def populate_metrics_df(start_date, end_date, engine, customer=None, contract=No
             ending_mrr_sum = starting_mrr_sum
             
             for customer in customer_names:
-                prior_month_revenue = prior_month_revenue_df.loc[prior_month_date, customer]
-                current_month_revenue = revenue_df.loc[d, customer]
+                prior_month_revenue = prior_month_revenue_df.loc[pd.Timestamp(prior_month_date), customer]
+                current_month_revenue = revenue_df.loc[pd.Timestamp(d), customer]
             
                 new_mrr_sum += current_month_revenue if prior_month_revenue == 0 and current_month_revenue > 0 else 0
                 churn_mrr_sum += prior_month_revenue if prior_month_revenue > 0 and current_month_revenue == 0 else 0
@@ -319,6 +341,20 @@ def populate_metrics_df(start_date, end_date, engine, customer=None, contract=No
 
     metrics_df = metrics_df.astype(float)
     metrics_df = metrics_df.round(1)
+    metrics_df.index = pd.to_datetime(metrics_df.index)
+
+    if frequency == 'Q':
+        metrics_df['Starting MRR'] = metrics_df['Starting MRR'].resample('Q').first()
+        metrics_df['Ending MRR'] = metrics_df['Ending MRR'].resample('Q').last()
+
+        metrics_df['New MRR'] = metrics_df['New MRR'].resample('Q').sum()
+        metrics_df['Churn MRR'] = metrics_df['Churn MRR'].resample('Q').sum()
+        metrics_df['Expansion MRR'] = metrics_df['Expansion MRR'].resample('Q').sum()
+        metrics_df['Contraction MRR'] = metrics_df['Contraction MRR'].resample('Q').sum()
+
+        metrics_df = metrics_df.dropna()
+        metrics_df.index = metrics_df.index.to_period('Q').strftime('Q%q %Y')
+
     return metrics_df
 
 def customer_arr_df(date, engine):

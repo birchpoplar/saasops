@@ -395,6 +395,9 @@ def customer_arr_df(date, engine):
     # Set 'CustomerName' as the DataFrame index
     df.set_index('CustomerName', inplace=True)
 
+    df = df.astype(float)
+    df = df.round(1)
+    
     total_arr = df['ARR'].sum()
     df.loc['Total ARR'] = total_arr
     
@@ -429,6 +432,9 @@ def customer_carr_df(date, engine):
         
     # Set 'CustomerName' as the DataFrame index
     df.set_index('CustomerName', inplace=True)
+
+    df = df.astype(float)
+    df = df.round(1)
 
     total_carr = df['CARR'].sum()
     df.loc['Total CARR'] = total_carr

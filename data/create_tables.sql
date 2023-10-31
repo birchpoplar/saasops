@@ -26,6 +26,8 @@ CREATE TABLE Segments (
     ContractID INTEGER,
     SegmentStartDate DATE,
     SegmentEndDate DATE,
+    ARROverrideStartDate DATE,
+    ARROverrideNote TEXT,
     Title TEXT,
     Type TEXT,
     SegmentValue REAL,

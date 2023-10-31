@@ -385,8 +385,14 @@ def customer_arr_df(date, engine):
     for customer in customer_names:
         # Filter df_arr for the current customer
         customer_data = df_arr[df_arr['customer name'] == customer]
+
+        # Determine the effective start date based on ARROverrideStartDate if it's not NaT
+        customer_data['effective_start_date'] = pd.to_datetime(np.where(pd.notna(customer_data['arroverridestartdate']), 
+                                                         customer_data['arroverridestartdate'], 
+                                                         customer_data['segmentstartdate']))
+
         # Further filter for segments that are active on the provided date
-        active_segments = customer_data[(customer_data['segmentstartdate'] <= date_datetime) & (customer_data['segmentenddate'] >= date_datetime)]
+        active_segments = customer_data[(customer_data['effective_start_date'] <= date_datetime) & (customer_data['segmentenddate'] >= date_datetime)]
         # Calculate the total ARR for the customer
         total_arr = active_segments['annualvalue'].sum()
         # Append to the main dataframe
@@ -415,15 +421,17 @@ def customer_carr_df(date, engine):
         customer_names_result = conn.execute(text(customer_names_str))
         customer_names = [row[0] for row in customer_names_result.fetchall()]
 
-    # Calculate ARR for each customer
+    # Calculate CARR for each customer
     date_datetime = pd.Timestamp(date)
     for customer in customer_names:
         # Filter df_arr for the current customer
         customer_data = df_carr[df_carr['customer name'] == customer]
+
         # Further filter for segments that are active on the provided date
         active_segments = customer_data[(customer_data['contractdate'] <= date_datetime) & (customer_data['segmentenddate'] >= date_datetime)]
-        # Calculate the total ARR for the customer
+        # Calculate the total CARR for the customer
         total_carr = active_segments['annualvalue'].sum()
+        
         # Append to the main dataframe
         df.loc[len(df)] = [customer, total_carr]
         
@@ -450,6 +458,8 @@ def generate_subscription_data_table(engine):
     seg.SegmentID AS "segmentid",
     seg.SegmentStartDate AS "segmentstartdate",
     seg.SegmentEndDate AS "segmentenddate",
+    seg.ARROverrideStartDate AS "arroverridestartdate",
+    seg.ARROverrideNote AS "arroverridenote",
     seg.SegmentValue AS "segmentvalue", 
     seg.Type AS "segmenttype"
     FROM

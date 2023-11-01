@@ -5,6 +5,7 @@ from rich.text import Text
 from rich.table import Table
 from datetime import datetime
 import pandas as pd
+import numpy as np
 from sqlalchemy import text
 from src.utils import print_status
 from src.classes import MessageStyle
@@ -60,6 +61,7 @@ def print_segments(engine, console=None):
     table.add_column("Contract Date", justify="right")
     table.add_column("Segment Start Date", justify="right")
     table.add_column("Segment End Date", justify="right")
+    table.add_column("ARR Override Start Date", justify="right")
     table.add_column("Title", justify="left")
     table.add_column("Type", justify="left")
     table.add_column("Segment Value", justify="right")
@@ -68,7 +70,7 @@ def print_segments(engine, console=None):
     # Execute the SQL query to fetch data
     with engine.connect() as conn:
         query = text("""
-        SELECT s.SegmentID, s.ContractID, c.RenewalFromContractID, cu.Name, c.ContractDate, s.SegmentStartDate, s.SegmentEndDate, s.Title, s.Type, s.SegmentValue
+        SELECT s.SegmentID, s.ContractID, c.RenewalFromContractID, cu.Name, c.ContractDate, s.SegmentStartDate, s.SegmentEndDate, s.ARROverrideStartDate, s.Title, s.Type, s.SegmentValue
         FROM Segments s
         JOIN Contracts c ON s.ContractID = c.ContractID
         JOIN Customers cu ON c.CustomerID = cu.CustomerID;
@@ -80,7 +82,7 @@ def print_segments(engine, console=None):
     
     # Add rows to the Rich table
     for row in rows:
-        segment_id, contract_id, renewal_from_contract_id, customer_name, contract_date, segment_start_date, segment_end_date, title, segment_type, segment_value = row
+        segment_id, contract_id, renewal_from_contract_id, customer_name, contract_date, segment_start_date, segment_end_date, arr_override_date, title, segment_type, segment_value = row
         table.add_row(
             str(segment_id), 
             str(contract_id),
@@ -88,7 +90,8 @@ def print_segments(engine, console=None):
             customer_name,
             str(contract_date),
             str(segment_start_date), 
-            str(segment_end_date), 
+            str(segment_end_date),
+            str(arr_override_date),
             title, 
             segment_type, 
             f"{segment_value:.2f}"
@@ -281,21 +284,37 @@ def print_dataframe(df, title, console: Console):
     return True
 
 def print_table(df, title, console: Console):
+
+    # Print a message if the DataFrame is empty
+    if df.empty:
+        console.print(f"No data available for: {title}")
+        return False
+    
     table = Table(title=title, show_header=True, show_lines=True)
     
+    # Ensure all columns are of type str
+    df = df.astype(str)
+
+    # Check if the DataFrame's index is a default integer index or named
+    has_named_index = not isinstance(df.index[0], (int, np.integer))
+
     # Add columns
+    if has_named_index:
+        table.add_column(df.index.name or "Index")  # df.index.name or "Index" retrieves the index name, or uses "Index" if it's None
     for column in df.columns:
         table.add_column(column, justify="right")
-    
+
     # Add rows to the table
-    for column, row in df.iterrows():
+    for _, row in df.iterrows():
         values = row.values
         formatted_values = [str(value) for value in values]
-        table.add_row(column, *formatted_values)
-    
+        if has_named_index:
+            table.add_row(_, *formatted_values)  # If it has a named index, add the index as the first value
+        else:
+            table.add_row(*formatted_values)
+
     console.print(table)
     return True
-
 
 def print_contract_details(engine, contract_id, console=None):
     if console is None:

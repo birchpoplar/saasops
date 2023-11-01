@@ -321,7 +321,37 @@ def carrdf(date: str):
     date = datetime.strptime(date, '%Y-%m-%d').date()
     df = calc.customer_carr_df(date, engine)
     display.print_table(df, f'CARR at {date}', console)
- 
+
+@calc_app.command("arrtf")
+def arrtfdf(date: str, timeframe: Optional[str]='M'):
+    """
+    Print New ARR table for month or quarter.
+    """
+    console = Console()
+    engine = database.connect_database(console)
+
+    date_obj = datetime.strptime(date, '%Y-%m-%d').date()
+
+    # Determine table title based on the provided timeframe
+    if timeframe == 'M':
+        title_date_str = date_obj.strftime('%B %Y')  # e.g., "January 2023"
+    elif timeframe == 'Q':
+        if date_obj.month in [1, 2, 3]:
+            title_date_str = f"Q1 {date_obj.year}"
+        elif date_obj.month in [4, 5, 6]:
+            title_date_str = f"Q2 {date_obj.year}"
+        elif date_obj.month in [7, 8, 9]:
+            title_date_str = f"Q3 {date_obj.year}"
+        else:
+            title_date_str = f"Q4 {date_obj.year}"
+    else:
+        raise ValueError("Invalid timeframe. It should be either 'M' or 'Q'")
+
+    df = calc.new_arr_by_timeframe(date, engine, timeframe)
+
+    # Use the adjusted title_date_str in the print_table function
+    display.print_table(df, f'ARR for {title_date_str}', console)
+    
 # Export commands 
 
 @export_app.command("all")

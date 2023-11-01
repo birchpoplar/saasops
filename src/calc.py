@@ -81,14 +81,39 @@ def populate_bkings_carr_arr_df(start_date, end_date, engine, customer=None, con
     if contract:
         df_carrarr = df_carrarr[df_carrarr['contract id'] == contract]
     
+
     # Calculate ARR
-    # loop over date_list and populate df in the ARR column with the annual value of each contract where the date in date_list is between the segmentstartdate and segmentenddate (inclusive)
     for d in date_list:
         d_datetime = pd.Timestamp(d)
-        # Get contracts that are active for the month of d
-        contracts = df_carrarr.loc[(df_carrarr['segmentstartdate'] <= d_datetime) & (df_carrarr['segmentenddate'] >= d_datetime)]
-        # Sum the annual value for the month of d
-        df.at[d, 'ARR'] = contracts['annualvalue'].sum()
+        temp_df = df_carrarr.copy()
+
+        # Determine the effective start date based on ARROverrideStartDate if it's not NaT
+        condition = pd.notna(temp_df['arroverridestartdate'])
+        temp_df.loc[condition, 'effective_start_date'] = pd.to_datetime(temp_df.loc[condition, 'arroverridestartdate'])
+        temp_df.loc[~condition, 'effective_start_date'] = pd.to_datetime(temp_df.loc[~condition, 'segmentstartdate'])
+
+        # Identify renewal contracts
+        renewal_contracts = temp_df[temp_df['renewalfromcontractid'].notna()]
+
+        # Handle ARR for contracts being renewed by renewal contracts 
+        for _, renewal_contract in renewal_contracts.iterrows():
+            renewal_start = renewal_contract['effective_start_date']
+            renewed_contract_id = renewal_contract['renewalfromcontractid']
+
+            if d_datetime < renewal_start:  # If before renewal contract's effective date
+                mask = (temp_df['contract id'] == renewal_contract['contract id'])
+                temp_df = temp_df[~mask]  # Remove renewal contract for this date
+            else:  # If on/after renewal contract's effective date
+                mask = (temp_df['contract id'] == renewed_contract_id) & \
+                    (temp_df['effective_start_date'] <= renewal_start) & \
+                    (temp_df['segmentenddate'] >= renewal_start)
+                temp_df = temp_df[~mask]  # Remove renewed contract for this date
+
+        # Further filter for segments that are active on the provided date
+        active_segments = temp_df[(temp_df['effective_start_date'] <= d_datetime) & (temp_df['segmentenddate'] >= d_datetime)]
+
+        # Sum the annual value for the date d
+        df.at[d, 'ARR'] = active_segments['annualvalue'].sum()
 
     # Calculate CARR
     for d in date_list:
@@ -373,7 +398,7 @@ def customer_arr_df(date, engine):
     df = pd.DataFrame(columns=['CustomerName', 'ARR'])
 
     df_arr = generate_subscription_data_table(engine)
-    
+
     # Create a list of all customers
     customer_names_str = "SELECT DISTINCT Name FROM Customers"
     with engine.begin() as conn:
@@ -384,17 +409,36 @@ def customer_arr_df(date, engine):
     date_datetime = pd.Timestamp(date)
     for customer in customer_names:
         # Filter df_arr for the current customer
-        customer_data = df_arr[df_arr['customer name'] == customer]
+        customer_data = df_arr[df_arr['customer name'] == customer].copy()
 
         # Determine the effective start date based on ARROverrideStartDate if it's not NaT
-        customer_data['effective_start_date'] = pd.to_datetime(np.where(pd.notna(customer_data['arroverridestartdate']), 
-                                                         customer_data['arroverridestartdate'], 
-                                                         customer_data['segmentstartdate']))
+        condition = pd.notna(customer_data['arroverridestartdate'])
+        customer_data.loc[condition, 'effective_start_date'] = pd.to_datetime(customer_data.loc[condition, 'arroverridestartdate'])
+        customer_data.loc[~condition, 'effective_start_date'] = pd.to_datetime(customer_data.loc[~condition, 'segmentstartdate'])
+
+        # Identify renewal contracts
+        renewal_contracts = customer_data[customer_data['renewalfromcontractid'].notna()]
+
+        # Handle ARR for contracts being renewed by renewal contracts 
+        for _, renewal_contract in renewal_contracts.iterrows():
+            renewal_start = renewal_contract['effective_start_date']
+            renewed_contract_id = renewal_contract['renewalfromcontractid']
+
+            if date_datetime < renewal_start:  # If before renewal contract's effective date, consider the renewed contract's ARR
+                mask = (customer_data['contract id'] == renewal_contract['contract id'])
+                customer_data = customer_data[~mask]  # Remove renewal contract for this date
+            else:  # If on/after renewal contract's effective date, consider only the renewal contract's ARR
+                mask = (customer_data['contract id'] == renewed_contract_id) & \
+                       (customer_data['effective_start_date'] <= renewal_start) & \
+                       (customer_data['segmentenddate'] >= renewal_start)
+                customer_data = customer_data[~mask]  # Remove renewed contract for this date
 
         # Further filter for segments that are active on the provided date
         active_segments = customer_data[(customer_data['effective_start_date'] <= date_datetime) & (customer_data['segmentenddate'] >= date_datetime)]
+        
         # Calculate the total ARR for the customer
         total_arr = active_segments['annualvalue'].sum()
+
         # Append to the main dataframe
         df.loc[len(df)] = [customer, total_arr]
         
@@ -448,6 +492,67 @@ def customer_carr_df(date, engine):
     df.loc['Total CARR'] = total_carr
     
     return df
+
+def new_arr_by_timeframe(date, engine, timeframe='M'):
+    """
+    Generate a DataFrame with new ARR for each customer for a given date and timeframe (month or quarter).
+
+    Args:
+        date (str): The date for which to calculate new ARR.
+        engine (sqlalchemy.engine): The SQLAlchemy engine to use for database access.
+        timeframe (str): Either 'month' or 'quarter' to specify the timeframe for which to calculate new ARR.
+
+    Returns:
+        df (pandas.DataFrame): A DataFrame with new ARR for each customer for the given date and timeframe.
+    """
+
+    df_arr = generate_subscription_data_table(engine)
+
+    date_datetime = pd.Timestamp(date)
+    
+    if timeframe == 'M':
+        start_date = date_datetime.replace(day=1)
+        end_date = (start_date + pd.offsets.MonthEnd(0))
+    elif timeframe == 'Q':
+        if date_datetime.month in [1, 2, 3]:
+            start_date, end_date = date_datetime.replace(month=1, day=1), date_datetime.replace(month=3, day=31)
+        elif date_datetime.month in [4, 5, 6]:
+            start_date, end_date = date_datetime.replace(month=4, day=1), date_datetime.replace(month=6, day=30)
+        elif date_datetime.month in [7, 8, 9]:
+            start_date, end_date = date_datetime.replace(month=7, day=1), date_datetime.replace(month=9, day=30)
+        else:
+            start_date, end_date = date_datetime.replace(month=10, day=1), date_datetime.replace(month=12, day=31)
+    else:
+        raise ValueError("Invalid timeframe. It should be either 'month' or 'quarter'")
+
+    # Print the start and end dates
+    print(f"Start date: {start_date}")
+    print(f"End date: {end_date}")
+    
+    # Determine the effective start date based on ARROverrideStartDate if it's not NaT
+    condition = pd.notna(df_arr['arroverridestartdate'])
+    df_arr.loc[condition, 'effective_start_date'] = pd.to_datetime(df_arr.loc[condition, 'arroverridestartdate'])
+    df_arr.loc[~condition, 'effective_start_date'] = pd.to_datetime(df_arr.loc[~condition, 'segmentstartdate'])
+    
+    # Filter for contracts that started within the timeframe
+    new_contracts = df_arr[(df_arr['effective_start_date'] >= start_date) & (df_arr['effective_start_date'] <= end_date)]
+
+    # Determine if the contract is "New" or "Renewal" based on the 'renewalfromcontractid' column
+    new_contracts['ARR Type'] = new_contracts['renewalfromcontractid'].apply(lambda x: 'Renewal' if pd.notna(x) else 'New')
+
+    # Pivot the data to get a table itemized by customer and contract
+    result_df = new_contracts.pivot_table(index=['customer name', 'contract id'], values='annualvalue', aggfunc='sum').reset_index()
+
+    # Check if the resulting DataFrame is empty
+    if result_df.empty:
+        print(f"No new contracts found in the timeframe: {start_date} to {end_date}")
+        # You can return an empty DataFrame with the same columns to maintain consistency
+        return pd.DataFrame(columns=['contract id', 'customer name', 'annualvalue', 'ARR Type'])
+    
+    # Re-order the columns to include the 'ARR Type' column
+    result_df = result_df[['contract id', 'customer name', 'annualvalue', 'ARR Type']]
+    
+    return result_df
 
 def generate_subscription_data_table(engine):
     """

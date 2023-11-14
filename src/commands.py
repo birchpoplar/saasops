@@ -129,6 +129,15 @@ def reconcont(contract_id: int):
     console = Console()
     engine = database.connect_database(console)
     display.print_contract_details(engine, contract_id, console)
+
+@contract_app.command("unlinked")
+def unlinkedcont():
+    """
+    List all contracts with no linked segments.
+    """
+    console = Console()
+    engine = database.connect_database(console)
+    display.print_contracts_without_segments(engine, console)
     
 # Segment commands
 

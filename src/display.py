@@ -372,3 +372,36 @@ def print_contract_details(engine, contract_id, console=None):
     
     console.print(segment_table)
     console.print(f"Total Segment Value: {total_segment_value:.2f}")
+
+
+def print_contracts_without_segments(engine, console=None):
+    """
+    Find and print contracts that have no segments referring to them.
+
+    Args:
+        engine (sqlalchemy.engine): The SQLAlchemy engine to use for database access.
+
+    Returns:
+        result (str): A string indicating the contracts that have no segments.
+    """
+
+    with engine.begin() as conn:
+        query = text("""
+        SELECT c.ContractID, c.Reference
+        FROM Contracts c
+        LEFT JOIN Segments s ON c.ContractID = s.ContractID
+        WHERE s.ContractID IS NULL;
+        """)
+        result = conn.execute(query)
+        
+        # Fetch all rows where there's no segment corresponding to the contract
+        contracts_without_segments = result.fetchall()
+
+        if len(contracts_without_segments) == 0:
+            console.print("All contracts have corresponding segments.")
+        else:
+            contracts_info = "\n".join([f"ContractID: {row[0]}, Reference: {row[1]}" for row in contracts_without_segments])
+            console.print(f"Contracts without segments:\n{contracts_info}")
+
+    return
+        

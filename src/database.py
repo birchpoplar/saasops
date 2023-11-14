@@ -153,6 +153,7 @@ def update_contract(engine, contract_id, field, value):
         else:
             return f"{result.rowcount} row(s) updated. Contract with ContractID {contract_id} was successfully updated."
 
+
 # Segment functions
 
 def add_segment(engine, contract_id, segment_start_date, segment_end_date, title, type, segment_value):

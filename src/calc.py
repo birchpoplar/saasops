@@ -11,7 +11,7 @@ import logging
 import calendar
 import numpy as np
 
-def populate_bkings_carr_arr_df(start_date, end_date, engine, customer=None, contract=None, frequency='M'):
+def populate_bkings_carr_arr_df(start_date, end_date, engine, customer=None, contract=None, frequency='M', ignore_arr_override=False):
     """Generate a DataFrame with Bookings, ARR and CARR for each month."""
 
     console = Console()
@@ -87,10 +87,14 @@ def populate_bkings_carr_arr_df(start_date, end_date, engine, customer=None, con
         d_datetime = pd.Timestamp(d)
         temp_df = df_carrarr.copy()
 
-        # Determine the effective start date based on ARROverrideStartDate if it's not NaT
-        condition = pd.notna(temp_df['arroverridestartdate'])
-        temp_df.loc[condition, 'effective_start_date'] = pd.to_datetime(temp_df.loc[condition, 'arroverridestartdate'])
-        temp_df.loc[~condition, 'effective_start_date'] = pd.to_datetime(temp_df.loc[~condition, 'segmentstartdate'])
+        if ignore_arr_override:
+            # Use segmentstartdate as the effective start date
+            temp_df['effective_start_date'] = pd.to_datetime(temp_df['segmentstartdate'])
+        else:
+            # Determine the effective start date based on ARROverrideStartDate if it's not NaT
+            condition = pd.notna(temp_df['arroverridestartdate'])
+            temp_df.loc[condition, 'effective_start_date'] = pd.to_datetime(temp_df.loc[condition, 'arroverridestartdate'])
+            temp_df.loc[~condition, 'effective_start_date'] = pd.to_datetime(temp_df.loc[~condition, 'segmentstartdate'])
 
         # Identify renewal contracts
         renewal_contracts = temp_df[temp_df['renewalfromcontractid'].notna()]

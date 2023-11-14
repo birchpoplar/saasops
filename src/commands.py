@@ -238,7 +238,7 @@ def delinvseg(invoice_segment_id: int):
 # Calculation commands
 
 @calc_app.command("bkings")
-def bkingsdf(start_date: str, end_date: str, customer: Optional[int]=None, contract: Optional[int]=None, frequency: Optional[str]='M'):
+def bkingsdf(start_date: str, end_date: str, customer: Optional[int]=None, contract: Optional[int]=None, frequency: Optional[str]='M', ignoreoverrides: Optional[bool]=False):
     """
     Print bookings, CARR and ARR dataframe.
     """
@@ -246,7 +246,7 @@ def bkingsdf(start_date: str, end_date: str, customer: Optional[int]=None, contr
     engine = database.connect_database(console)
     start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
     end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
-    df = calc.populate_bkings_carr_arr_df(start_date, end_date, engine, customer, contract, frequency)
+    df = calc.populate_bkings_carr_arr_df(start_date, end_date, engine, customer, contract, frequency, ignoreoverrides)
     df_title = f'Bookings, ARR and CARR, {start_date} to {end_date}, frequency: {frequency}'
     if customer:
         df_title += f', customer: {customer}'

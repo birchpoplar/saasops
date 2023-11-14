@@ -119,32 +119,17 @@ def populate_bkings_carr_arr_df(start_date, end_date, engine, customer=None, con
     for d in date_list:
         d_datetime = pd.Timestamp(d)
         
-        # Initial set of contracts valid for the date
-        valid_contracts = df_carrarr[(df_carrarr['contractdate'] <= d_datetime) & (df_carrarr['segmentenddate'] >= d_datetime)].copy()
+        # Filter for segments that are active from the contract date to the segment end date
+        active_segments = df_carrarr[(df_carrarr['contractdate'] <= d_datetime) & 
+                                     (df_carrarr['segmentenddate'] >= d_datetime)]
 
-        # Cycle through the valid contracts, and for any contract that has a renewal contract, check if the renewal contract has a higher annual value. If so, set the annual value of the current contract to 0, as the renewal contract takes precedence. if the renewal contract has a lower annual value, then set the annual value of the renewal contract to 0, as the current contract takes precedence.
-        for idx, row in valid_contracts.iterrows():
-            if not pd.isnull(row['renewalfromcontractid']):
-                # Use .loc to get the exact renewal contract
-                renewal_contract_df = valid_contracts.loc[valid_contracts['contract id'] == row['renewalfromcontractid']]
-                if renewal_contract_df.empty:
-                    continue
-                renewal_contract = renewal_contract_df.iloc[0]
-                if renewal_contract['annualvalue'] > row['annualvalue']:
-                    valid_contracts.loc[idx, 'annualvalue'] = 0
-                else:
-                    valid_contracts.loc[valid_contracts['contract id'] == renewal_contract['contract id'], 'annualvalue'] = 0
-
-        # Compute CARR for the date
-        df.at[d, 'CARR'] = valid_contracts['annualvalue'].sum()
+        # For contracts that are renewed, remove the original contract if the active segments dataframe contains the renewed contract
+        # as well as the renewing contract, which can be done by looping through contract id and seeing if renewalfromcontractid is the same as the contract id
+        active_segments = active_segments[~active_segments['contract id'].isin(active_segments['renewalfromcontractid'])]
+    
+        # Calculate total CARR for the date
+        df.at[d, 'CARR'] = active_segments['annualvalue'].sum()
         
-    # for d in date_list:
-    #     d_datetime = pd.Timestamp(d)
-    #     # Get contracts that are active for the month of d
-    #     contracts = df_carrarr.loc[(df_carrarr['contractdate'] <= d_datetime) & (df_carrarr['segmentenddate'] >= d_datetime)]
-    #     # Sum the annual value for the month of d
-    #     df.at[d, 'CARR'] = contracts['annualvalue'].sum()
-
     df = df.astype(float)
     df = df.round(1)
 
@@ -382,6 +367,7 @@ def populate_metrics_df(start_date, end_date, engine, customer=None, contract=No
 
     return metrics_df
 
+
 def customer_arr_df(date, engine):
     """
     Generate a DataFrame with ARR for each customer for a given date.
@@ -453,7 +439,6 @@ def customer_arr_df(date, engine):
     
     return df
 
-
 def customer_carr_df(date, engine):
     """Generate a DataFrame with CARR for each customer for a given date."""
     
@@ -468,18 +453,22 @@ def customer_carr_df(date, engine):
         customer_names_result = conn.execute(text(customer_names_str))
         customer_names = [row[0] for row in customer_names_result.fetchall()]
 
-    # Calculate CARR for each customer
     date_datetime = pd.Timestamp(date)
     for customer in customer_names:
-        # Filter df_arr for the current customer
-        customer_data = df_carr[df_carr['customer name'] == customer]
+        customer_data = df_carr[df_carr['customer name'] == customer].copy()
 
-        # Further filter for segments that are active on the provided date
-        active_segments = customer_data[(customer_data['contractdate'] <= date_datetime) & (customer_data['segmentenddate'] >= date_datetime)]
-        # Calculate the total CARR for the customer
+        # Filter for segments that are active from the contract date to the segment end date
+        active_segments = customer_data[(customer_data['contractdate'] <= date_datetime) & 
+                                        (customer_data['segmentenddate'] >= date_datetime)]
+
+        # For contracts that are renewed, remove the original contract if the active segments dataframe contains the renewed contract
+        # as well as the renewing contract, which can be done by looping through contract id and seeing if renewalfromcontractid is the same as the contract id
+        active_segments = active_segments[~active_segments['contract id'].isin(active_segments['renewalfromcontractid'])]
+        
+        # Calculate total CARR for the customer
         total_carr = active_segments['annualvalue'].sum()
         
-        # Append to the main dataframe
+        # Append to the main DataFrame
         df.loc[len(df)] = [customer, total_carr]
         
     # Set 'CustomerName' as the DataFrame index
@@ -492,6 +481,7 @@ def customer_carr_df(date, engine):
     df.loc['Total CARR'] = total_carr
     
     return df
+
 
 def new_arr_by_timeframe(date, engine, timeframe='M'):
     """
@@ -535,13 +525,19 @@ def new_arr_by_timeframe(date, engine, timeframe='M'):
     df_arr.loc[~condition, 'effective_start_date'] = pd.to_datetime(df_arr.loc[~condition, 'segmentstartdate'])
     
     # Filter for contracts that started within the timeframe
-    new_contracts = df_arr[(df_arr['effective_start_date'] >= start_date) & (df_arr['effective_start_date'] <= end_date)]
+    new_contracts = df_arr[(df_arr['effective_start_date'] >= start_date) & (df_arr['effective_start_date'] <= end_date)].copy()
 
     # Determine if the contract is "New" or "Renewal" based on the 'renewalfromcontractid' column
     new_contracts['ARR Type'] = new_contracts['renewalfromcontractid'].apply(lambda x: 'Renewal' if pd.notna(x) else 'New')
 
-    # Pivot the data to get a table itemized by customer and contract
+    # Create a DataFrame with the necessary columns for merging after pivot
+    arr_type_df = new_contracts[['customer name', 'contract id', 'ARR Type']].drop_duplicates()
+
+    # Pivot the data
     result_df = new_contracts.pivot_table(index=['customer name', 'contract id'], values='annualvalue', aggfunc='sum').reset_index()
+
+    # Merge the 'ARR Type' back into the DataFrame
+    result_df = result_df.merge(arr_type_df, on=['customer name', 'contract id'], how='left')
 
     # Check if the resulting DataFrame is empty
     if result_df.empty:

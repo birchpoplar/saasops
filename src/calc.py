@@ -433,6 +433,9 @@ def customer_arr_df(date, engine):
 
     df = df.astype(float)
     df = df.round(1)
+
+    # Remove rows where ARR is zero
+    df = df[df['ARR'] != 0]
     
     total_arr = df['ARR'].sum()
     df.loc['Total ARR'] = total_arr
@@ -476,6 +479,9 @@ def customer_carr_df(date, engine):
 
     df = df.astype(float)
     df = df.round(1)
+
+    # Remove rows where ARR is zero
+    df = df[df['CARR'] != 0]
 
     total_carr = df['CARR'].sum()
     df.loc['Total CARR'] = total_carr

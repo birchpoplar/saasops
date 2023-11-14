@@ -368,7 +368,7 @@ def populate_metrics_df(start_date, end_date, engine, customer=None, contract=No
     return metrics_df
 
 
-def customer_arr_df(date, engine):
+def customer_arr_df(date, engine, ignore_arr_override=False):
     """
     Generate a DataFrame with ARR for each customer for a given date.
 
@@ -397,10 +397,14 @@ def customer_arr_df(date, engine):
         # Filter df_arr for the current customer
         customer_data = df_arr[df_arr['customer name'] == customer].copy()
 
-        # Determine the effective start date based on ARROverrideStartDate if it's not NaT
-        condition = pd.notna(customer_data['arroverridestartdate'])
-        customer_data.loc[condition, 'effective_start_date'] = pd.to_datetime(customer_data.loc[condition, 'arroverridestartdate'])
-        customer_data.loc[~condition, 'effective_start_date'] = pd.to_datetime(customer_data.loc[~condition, 'segmentstartdate'])
+        if ignore_arr_override:
+            # Use segmentstartdate as the effective start date
+            customer_data['effective_start_date'] = pd.to_datetime(customer_data['segmentstartdate'])
+        else:
+            # Determine the effective start date based on ARROverrideStartDate if it's not NaT
+            condition = pd.notna(customer_data['arroverridestartdate'])
+            customer_data.loc[condition, 'effective_start_date'] = pd.to_datetime(customer_data.loc[condition, 'arroverridestartdate'])
+            customer_data.loc[~condition, 'effective_start_date'] = pd.to_datetime(customer_data.loc[~condition, 'segmentstartdate'])
 
         # Identify renewal contracts
         renewal_contracts = customer_data[customer_data['renewalfromcontractid'].notna()]

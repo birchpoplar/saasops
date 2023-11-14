@@ -301,14 +301,14 @@ def metricsdf(
     display.print_dataframe(df, df_title, console)
 
 @calc_app.command("arr")
-def arrdf(date: str):
+def arrdf(date: str, ignoreoverrides: Optional[bool]=False):
     """
     Print ARR table for specific date.
     """
     console = Console()
     engine = database.connect_database(console)
     date = datetime.strptime(date, '%Y-%m-%d').date()
-    df = calc.customer_arr_df(date, engine)
+    df = calc.customer_arr_df(date, engine, ignoreoverrides)
     display.print_table(df, f'ARR at {date}', console)
 
 @calc_app.command("carr")

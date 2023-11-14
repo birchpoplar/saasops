@@ -103,12 +103,12 @@ def export_data_to_pptx(engine, start_date, end_date):
     prs.save("exports/data_export.pptx")
 
 
-def export_chart_images(engine, start_date, end_date, customer=None, contract=None, show_gridlines=False, frequency='M'):
+def export_chart_images(engine, start_date, end_date, customer=None, contract=None, show_gridlines=False, frequency='M', ignoreoverrides=False):
     # Generate charts
     visualization.create_mrr_change_chart(engine, start_date, end_date, customer, contract, frequency)
     visualization.create_monthly_mrr_chart(engine, start_date, end_date, customer, contract, show_gridlines, frequency)
     visualization.ttm_ndr_gdr_chart(engine, end_date, customer, contract)
-    visualization.create_bookings_arr_carr_chart(engine, start_date, end_date, customer, contract, show_gridlines, frequency)
+    visualization.create_bookings_arr_carr_chart(engine, start_date, end_date, customer, contract, show_gridlines, frequency, ignoreoverrides)
 
 def add_chart_slide(prs, slide_title, image_path):
     slide = prs.slides.add_slide(prs.slide_layouts[23])

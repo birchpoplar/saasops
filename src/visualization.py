@@ -286,11 +286,11 @@ def create_monthly_mrr_chart(engine, start_date, end_date, customer=None, contra
     plt.savefig("exports/monthly_mrr.png", dpi=300)
 
 
-def create_bookings_arr_carr_chart(engine, start_date, end_date, customer=None, contract=None, show_gridlines=False, frequency='M'):
+def create_bookings_arr_carr_chart(engine, start_date, end_date, customer=None, contract=None, show_gridlines=False, frequency='M', ignoreoverrides=False):
 
     console = Console()
     print_status(console, f"Creating bookings, ARR, and CARR chart between {start_date} and {end_date}", MessageStyle.INFO)
-    df = calc.populate_bkings_carr_arr_df(start_date, end_date, engine, customer, contract, frequency=frequency)
+    df = calc.populate_bkings_carr_arr_df(start_date, end_date, engine, customer, contract, frequency, ignoreoverrides)
     
     # Convert the index to DateTimeIndex if it's not already
     # if not isinstance(df.index, pd.DatetimeIndex):

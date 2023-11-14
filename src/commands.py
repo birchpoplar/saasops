@@ -382,7 +382,8 @@ def exportcharts(
         customer: Optional[int]=None,
         contract: Optional[int]=None,
         show_gridlines: bool = typer.Option(False, "--show-gridlines", help="Show gridlines on charts"),
-        frequency: Optional[str]='M'
+        frequency: Optional[str]='M',
+        ignoreoverrides: Optional[bool]=False
 ):
     """
     Export all charts to image files.
@@ -391,4 +392,4 @@ def exportcharts(
     engine = database.connect_database(console)
     start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
     end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
-    export.export_chart_images(engine, start_date, end_date, customer, contract, show_gridlines, frequency)
+    export.export_chart_images(engine, start_date, end_date, customer, contract, show_gridlines, frequency, ignoreoverrides)

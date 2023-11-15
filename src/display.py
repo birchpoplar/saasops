@@ -294,6 +294,7 @@ def print_table(df, title, console: Console):
     
     # Ensure all columns are of type str
     df = df.astype(str)
+    df.index = df.index.map(str)
 
     # Check if the DataFrame's index is a default integer index or named
     has_named_index = not isinstance(df.index[0], (int, np.integer))

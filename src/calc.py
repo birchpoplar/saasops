@@ -438,7 +438,7 @@ def populate_arr_metrics_df(start_date, end_date, engine, customer=None, contrac
             
         else:
             # Summing up all customer revenues for the prior month
-            starting_arr_sum = prior_month_arr_df.loc[prior_month_date].sum()
+            starting_arr_sum = prior_month_arr_df.loc["Total ARR"].sum()
             ending_arr_sum = starting_arr_sum
             
             for customer in customer_names:

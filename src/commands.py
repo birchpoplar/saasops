@@ -360,6 +360,23 @@ def arrtfdf(date: str, timeframe: Optional[str]='M'):
 
     # Use the adjusted title_date_str in the print_table function
     display.print_table(df, f'ARR for {title_date_str}', console)
+
+@calc_app.command("arrmetrics")
+def arrmetricsdf(start_date: str, end_date: str):
+    """
+    Print ARR metrics dataframe.
+    """
+    console = Console()
+    engine = database.connect_database(console)
+    
+    start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+    end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+
+    df = calc.populate_arr_metrics_df(start_date, end_date, engine)
+    df_title = f'Metrics, {start_date} to {end_date}, frequency: XXXX'
+
+    display.print_dataframe(df, df_title, console)
+
     
 # Export commands 
 

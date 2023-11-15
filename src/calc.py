@@ -261,7 +261,7 @@ def populate_metrics_df(start_date, end_date, engine, customer=None, contract=No
     console = Console()
 
     # Obtain the revenue DataFrame
-    print(start_date, end_date)
+    # print(start_date, end_date)
     revenue_df = populate_revenue_df(start_date, end_date, "end", engine, customer, contract)
 
     # Force start_date and end_date to be the last days of the input months
@@ -372,6 +372,103 @@ def populate_metrics_df(start_date, end_date, engine, customer=None, contract=No
     return metrics_df
 
 
+def populate_arr_metrics_df(start_date, end_date, engine, customer=None, contract=None, frequency='M'):
+    """Populate a DataFrame with ARR metrics for each month in the date range. Note that the days of the month on each of start_date and end_date are ignored in the creation of date_list that has end of month days only."""
+
+    console = Console()
+
+    # Generate list of dates
+    date_list = []
+    current_date = start_date
+
+    print_status(console, f"... generating ARR metrics dataframe from {start_date} to {end_date}", MessageStyle.INFO)
+    while current_date <= end_date:
+        _, last_day = calendar.monthrange(current_date.year, current_date.month)
+        eom_date = current_date.replace(day=last_day)  # End-of-month date
+        date_list.append(eom_date)
+        
+        # Add one month to get the next start_date
+        current_date = eom_date + rd.relativedelta(days=1)    
+
+    with engine.begin() as conn:
+        customer_names_str = ("SELECT DISTINCT Name FROM Customers")
+        if customer is not None:
+            customer_names_str += f" WHERE CustomerID = '{customer}'"
+        customer_names_result = conn.execute(text(customer_names_str))
+        customer_names = [row[0] for row in customer_names_result.fetchall()]
+
+    # Create a second DataFrame for metrics
+    arr_metrics_df = pd.DataFrame(index=date_list, columns=["New ARR", "Churn ARR", "Expansion ARR", "Contraction ARR", "Starting ARR", "Ending ARR"])
+
+    # Find the starting ARR figure
+    prior_month_date = date_list[0] - rd.relativedelta(months=1)
+    prior_month_arr_df = customer_arr_df(prior_month_date, engine)
+    prior_month_date = prior_month_arr_df.index[0]
+     
+    # Calculate and populate metrics for the second DataFrame
+    previous_month = None
+    for d in date_list:
+        # Initialize the metrics sums
+        new_arr_sum = 0
+        churn_arr_sum = 0
+        expansion_arr_sum = 0
+        contraction_arr_sum = 0
+
+        # Obtain the ARR dataframe for the current month
+        current_month_arr_df = customer_arr_df(d, engine)
+        
+        if previous_month:
+            ending_arr_sum = arr_metrics_df.loc[previous_month, "Ending ARR"]
+            starting_arr_sum = ending_arr_sum
+ 
+            prior_month_date = d - rd.relativedelta(months=1) 
+            _, last_day = calendar.monthrange(prior_month_date.year, prior_month_date.month)
+            prior_month_arr_df = customer_arr_df(prior_month_date.replace(day=last_day), engine)
+            
+            for customer in customer_names:
+                previous_month_arr = prior_month_arr_df.loc[customer, "ARR"]
+                current_month_arr = current_month_arr_df.loc[customer, "ARR"]
+                
+                new_arr_sum += current_month_arr if previous_month_arr == 0 and current_month_arr > 0 else 0
+                churn_arr_sum += previous_month_arr if previous_month_arr > 0 and current_month_arr == 0 else 0
+                expansion_arr_sum += current_month_arr - previous_month_arr if current_month_arr > previous_month_arr and previous_month_arr > 0 else 0
+                contraction_arr_sum += previous_month_arr - current_month_arr if current_month_arr < previous_month_arr and current_month_arr > 0 else 0
+                
+            ending_arr_sum += new_arr_sum + expansion_arr_sum - churn_arr_sum - contraction_arr_sum
+            
+        else:
+            # Summing up all customer revenues for the prior month
+            starting_arr_sum = prior_month_arr_df.loc[prior_month_date].sum()
+            ending_arr_sum = starting_arr_sum
+            
+            for customer in customer_names:
+                prior_month_arr = prior_month_arr_df.loc[customer, "ARR"]
+                current_month_arr = current_month_arr_df.loc[customer, "ARR"]
+
+                new_arr_sum += current_month_arr if prior_month_arr == 0 and current_month_arr > 0 else 0
+                churn_arr_sum += prior_month_arr if prior_month_arr > 0 and current_month_arr == 0 else 0
+                expansion_arr_sum += current_month_arr - prior_month_arr if current_month_arr > prior_month_arr and prior_month_arr > 0 else 0
+                contraction_arr_sum += prior_month_arr - current_month_arr if current_month_arr < prior_month_arr and current_month_arr > 0 else 0
+            
+            ending_arr_sum += new_arr_sum + expansion_arr_sum - churn_arr_sum - contraction_arr_sum
+        
+        arr_metrics_df.at[d, "New ARR"] = new_arr_sum
+        arr_metrics_df.at[d, "Churn ARR"] = churn_arr_sum
+        arr_metrics_df.at[d, "Expansion ARR"] = expansion_arr_sum
+        arr_metrics_df.at[d, "Contraction ARR"] = contraction_arr_sum
+        arr_metrics_df.at[d, "Starting ARR"] = starting_arr_sum
+        arr_metrics_df.at[d, "Ending ARR"] = ending_arr_sum
+
+        previous_month = d
+    
+    
+    arr_metrics_df = arr_metrics_df.astype(float)
+    arr_metrics_df = arr_metrics_df.round(1)
+    arr_metrics_df.index = pd.to_datetime(arr_metrics_df.index)
+        
+    return arr_metrics_df
+
+
 def customer_arr_df(date, engine, ignore_arr_override=False):
     """
     Generate a DataFrame with ARR for each customer for a given date.
@@ -443,7 +540,8 @@ def customer_arr_df(date, engine, ignore_arr_override=False):
     df = df.round(1)
 
     # Remove rows where ARR is zero
-    df = df[df['ARR'] != 0]
+    # NEED TO ADD FLAG TO REMOVE THIS
+    # df = df[df['ARR'] != 0]
     
     total_arr = df['ARR'].sum()
     df.loc['Total ARR'] = total_arr

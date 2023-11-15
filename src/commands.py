@@ -252,7 +252,7 @@ def bkingsdf(start_date: str, end_date: str, customer: Optional[int]=None, contr
         df_title += f', customer: {customer}'
     if contract:
         df_title += f', contract: {contract}'
-    display.print_dataframe(df, df_title, console)
+    display.print_dataframe(df, df_title, console, "Bookings, ARR, CARR")
 
 @calc_app.command("rev")
 def revdf(
@@ -284,7 +284,7 @@ def revdf(
         df_title += f', customer: {customer}'
     if contract:
         df_title += f', contract: {contract}'
-    display.print_dataframe(df, df_title, console)
+    display.print_dataframe(df, df_title, console, "Revenue")
 
 @calc_app.command("metrics")
 def metricsdf(
@@ -308,7 +308,7 @@ def metricsdf(
     if contract:
         df_title += f', contract: {contract}'
 
-    display.print_dataframe(df, df_title, console)
+    display.print_dataframe(df, df_title, console, "MRR Metrics")
 
 @calc_app.command("arr")
 def arrdf(date: str, ignoreoverrides: Optional[bool]=False):
@@ -376,7 +376,7 @@ def arrmetricsdf(start_date: str, end_date: str, customer: Optional[int]=None, c
     df = calc.populate_arr_metrics_df(start_date, end_date, engine, customer, contract, frequency, ignoreoverrides)
     df_title = f'ARR Metrics, {start_date} to {end_date}, frequency: {frequency}'
     
-    display.print_dataframe(df, df_title, console)
+    display.print_dataframe(df, df_title, console, "ARR Metrics")
 
     
 # Export commands 

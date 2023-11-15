@@ -256,14 +256,14 @@ def print_invoices(engine, console=None):
     
 # Dataframe display functions   
 
-def print_dataframe(df, title, console: Console):
-    # Transpose DataFrame so customer names become the row index
+def print_dataframe(df, title, console: Console, lh_column_title='Customer'):
+    # Transpose DataFrame so the column names become the row index
     transposed_df = df.transpose()
 
     table = Table(title=title, show_header=True, show_lines=True)
     
-    # Add the "Customer" column for row titles (customer names)
-    table.add_column("Customer", justify="right")
+    # Add the left hand column for row titles, the title of which depends on the source dataframe content
+    table.add_column(lh_column_title, justify="right")
     
     # Convert datetime index to formatted strings and add as columns
     if isinstance(df.index[0], (pd.Timestamp, pd.DatetimeIndex)):
@@ -275,10 +275,11 @@ def print_dataframe(df, title, console: Console):
         table.add_column(formatted_date, justify="right")
     
     # Add rows to the table
-    for customer, row in transposed_df.iterrows():
+    for column, row in transposed_df.iterrows():
         values = row.values
-        formatted_values = [str(int(value)) for value in values]
-        table.add_row(customer, *formatted_values)
+        formatted_values = ['{:,}'.format(int(value)) if isinstance(value, (int, float)) else value for value in values]
+        #formatted_values = [str(int(value)) for value in values]
+        table.add_row(column, *formatted_values)
     
     console.print(table)
     return True

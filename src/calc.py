@@ -536,8 +536,8 @@ def customer_arr_df(date, engine, ignore_arr_override=False):
     # Set 'CustomerName' as the DataFrame index
     df.set_index('CustomerName', inplace=True)
 
-    df = df.astype(float)
-    df = df.round(1)
+    df = df.astype(int)
+    #df = df.map(lambda x: int(x))
 
     # Remove rows where ARR is zero
     # NEED TO ADD FLAG TO REMOVE THIS

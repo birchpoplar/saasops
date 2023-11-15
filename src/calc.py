@@ -372,7 +372,7 @@ def populate_metrics_df(start_date, end_date, engine, customer=None, contract=No
     return metrics_df
 
 
-def populate_arr_metrics_df(start_date, end_date, engine, customer=None, contract=None, frequency='M'):
+def populate_arr_metrics_df(start_date, end_date, engine, customer=None, contract=None, frequency='M', ignore_arr_override=False):
     """Populate a DataFrame with ARR metrics for each month in the date range. Note that the days of the month on each of start_date and end_date are ignored in the creation of date_list that has end of month days only."""
 
     console = Console()
@@ -399,10 +399,10 @@ def populate_arr_metrics_df(start_date, end_date, engine, customer=None, contrac
 
     # Create a second DataFrame for metrics
     arr_metrics_df = pd.DataFrame(index=date_list, columns=["New ARR", "Churn ARR", "Expansion ARR", "Contraction ARR", "Starting ARR", "Ending ARR"])
-
+  
     # Find the starting ARR figure
     prior_month_date = date_list[0] - rd.relativedelta(months=1)
-    prior_month_arr_df = customer_arr_df(prior_month_date, engine)
+    prior_month_arr_df = customer_arr_df(prior_month_date, engine, ignore_arr_override=ignore_arr_override)
     prior_month_date = prior_month_arr_df.index[0]
      
     # Calculate and populate metrics for the second DataFrame
@@ -415,7 +415,7 @@ def populate_arr_metrics_df(start_date, end_date, engine, customer=None, contrac
         contraction_arr_sum = 0
 
         # Obtain the ARR dataframe for the current month
-        current_month_arr_df = customer_arr_df(d, engine)
+        current_month_arr_df = customer_arr_df(d, engine, ignore_arr_override)
         
         if previous_month:
             ending_arr_sum = arr_metrics_df.loc[previous_month, "Ending ARR"]
@@ -466,6 +466,18 @@ def populate_arr_metrics_df(start_date, end_date, engine, customer=None, contrac
     arr_metrics_df = arr_metrics_df.round(1)
     arr_metrics_df.index = pd.to_datetime(arr_metrics_df.index)
         
+    if frequency == 'Q':
+        arr_metrics_df['Starting ARR'] = arr_metrics_df['Starting ARR'].resample('Q').first()
+        arr_metrics_df['Ending ARR'] = arr_metrics_df['Ending ARR'].resample('Q').last()
+
+        arr_metrics_df['New ARR'] = arr_metrics_df['New ARR'].resample('Q').sum()
+        arr_metrics_df['Churn ARR'] = arr_metrics_df['Churn ARR'].resample('Q').sum()
+        arr_metrics_df['Expansion ARR'] = arr_metrics_df['Expansion ARR'].resample('Q').sum()
+        arr_metrics_df['Contraction ARR'] = arr_metrics_df['Contraction ARR'].resample('Q').sum()
+
+        arr_metrics_df = arr_metrics_df.dropna()
+        arr_metrics_df.index = arr_metrics_df.index.to_period('Q').strftime('Q%q %Y')
+
     return arr_metrics_df
 
 

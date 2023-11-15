@@ -307,7 +307,10 @@ def metricsdf(
         df_title += f', customer: {customer}'
     if contract:
         df_title += f', contract: {contract}'
-    display.print_dataframe(df, df_title, console)
+
+    df = df.transpose() 
+    df.index.name = 'ARR Metrics'
+    display.print_table(df, df_title, console)
 
 @calc_app.command("arr")
 def arrdf(date: str, ignoreoverrides: Optional[bool]=False):
@@ -362,7 +365,7 @@ def arrtfdf(date: str, timeframe: Optional[str]='M'):
     display.print_table(df, f'ARR for {title_date_str}', console)
 
 @calc_app.command("arrmetrics")
-def arrmetricsdf(start_date: str, end_date: str):
+def arrmetricsdf(start_date: str, end_date: str, customer: Optional[int]=None, contract: Optional[int]=None, frequency: Optional[str]='M', ignoreoverrides: Optional[bool]=False):
     """
     Print ARR metrics dataframe.
     """
@@ -372,10 +375,12 @@ def arrmetricsdf(start_date: str, end_date: str):
     start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
     end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
 
-    df = calc.populate_arr_metrics_df(start_date, end_date, engine)
-    df_title = f'Metrics, {start_date} to {end_date}, frequency: XXXX'
-
-    display.print_dataframe(df, df_title, console)
+    df = calc.populate_arr_metrics_df(start_date, end_date, engine, customer, contract, frequency, ignoreoverrides)
+    df_title = f'Metrics, {start_date} to {end_date}, frequency: {frequency}'
+    df = df.transpose()
+    df.index.name = 'ARR Metrics'
+    
+    display.print_table(df, df_title, console)
 
     
 # Export commands 

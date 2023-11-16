@@ -256,6 +256,69 @@ def print_invoices(engine, console=None):
     
 # Dataframe display functions   
 
+def print_combined_table(df, title, console: Console, transpose=False, lh_column_title='Customer'):
+    # Check for empty DataFrame
+    if df.empty:
+        console.print(f"No data available for: {title}")
+        return False
+
+    table = Table(title=title, show_header=True, show_lines=True)
+
+    if transpose:
+        # Transpose the DataFrame
+        df = df.transpose()
+
+        # Add the left-hand column with row titles (originally column names)
+        table.add_column(lh_column_title, justify="right")
+
+        # Handle datetime index specifically
+        if isinstance(df.columns[0], (pd.Timestamp, pd.DatetimeIndex)):
+            formatted_dates = [date.strftime("%b-%Y") for date in df.columns]
+            for formatted_date in formatted_dates:
+                table.add_column(formatted_date, justify="right")
+        else:
+            for column in df.columns:
+                table.add_column(str(column), justify="right")
+    else:
+        # Handle datetime index for rows
+        if isinstance(df.index[0], (pd.Timestamp, pd.DatetimeIndex)):
+            formatted_dates = [date.strftime("%b-%Y") for date in df.index]
+            table.add_column("Date", justify="right")
+        elif not isinstance(df.index[0], (int, np.integer)):
+            table.add_column(df.index.name or "Index", justify="right")
+
+        for column in df.columns:
+            table.add_column(column, justify="right")
+
+    # Add rows to the table
+    for index, row in df.iterrows():
+        formatted_values = []
+        for value in row.values:
+            if isinstance(value, float):
+                # Convert float to int to ignore digits after decimal point
+                formatted_value = '{:,}'.format(int(value))
+            elif isinstance(value, int):
+                # Format integer types with commas
+                formatted_value = '{:,}'.format(value)
+            else:
+                # Use the string representation for other types
+                formatted_value = str(value)
+            formatted_values.append(formatted_value)
+        
+        if transpose:
+            table.add_row(str(index), *formatted_values)
+        elif isinstance(df.index[0], (pd.Timestamp, pd.DatetimeIndex)):
+            table.add_row(index.strftime("%b-%Y"), *formatted_values)
+        elif not isinstance(df.index[0], (int, np.integer)):
+            table.add_row(str(index), *formatted_values)
+        else:
+            table.add_row(*formatted_values)
+
+    console.print(table)
+    return True
+
+
+
 def print_dataframe(df, title, console: Console, lh_column_title='Customer'):
     # Transpose DataFrame so the column names become the row index
     transposed_df = df.transpose()
@@ -281,40 +344,6 @@ def print_dataframe(df, title, console: Console, lh_column_title='Customer'):
         #formatted_values = [str(int(value)) for value in values]
         table.add_row(column, *formatted_values)
     
-    console.print(table)
-    return True
-
-def print_table(df, title, console: Console):
-
-    # Print a message if the DataFrame is empty
-    if df.empty:
-        console.print(f"No data available for: {title}")
-        return False
-    
-    table = Table(title=title, show_header=True, show_lines=True)
-    
-    # Ensure all columns are of type str
-    df = df.astype(str)
-    df.index = df.index.map(str)
-
-    # Check if the DataFrame's index is a default integer index or named
-    has_named_index = not isinstance(df.index[0], (int, np.integer))
-
-    # Add columns
-    if has_named_index:
-        table.add_column(df.index.name or "Index")  # df.index.name or "Index" retrieves the index name, or uses "Index" if it's None
-    for column in df.columns:
-        table.add_column(column, justify="right")
-
-    # Add rows to the table
-    for _, row in df.iterrows():
-        values = row.values
-        formatted_values = [str(value) for value in values]
-        if has_named_index:
-            table.add_row(_, *formatted_values)  # If it has a named index, add the index as the first value
-        else:
-            table.add_row(*formatted_values)
-
     console.print(table)
     return True
 

@@ -252,7 +252,7 @@ def bkingsdf(start_date: str, end_date: str, customer: Optional[int]=None, contr
         df_title += f', customer: {customer}'
     if contract:
         df_title += f', contract: {contract}'
-    display.print_dataframe(df, df_title, console, "Bookings, ARR, CARR")
+    display.print_combined_table(df, df_title, console, "Bookings, ARR, CARR")
 
 @calc_app.command("rev")
 def revdf(
@@ -284,7 +284,7 @@ def revdf(
         df_title += f', customer: {customer}'
     if contract:
         df_title += f', contract: {contract}'
-    display.print_dataframe(df, df_title, console, "Revenue")
+    display.print_combined_table(df, df_title, console, "Revenue")
 
 @calc_app.command("metrics")
 def metricsdf(
@@ -308,29 +308,32 @@ def metricsdf(
     if contract:
         df_title += f', contract: {contract}'
 
-    display.print_dataframe(df, df_title, console, "MRR Metrics")
+    display.print_combined_table(df, df_title, console, "MRR Metrics")
 
 @calc_app.command("arr")
-def arrdf(date: str, ignoreoverrides: Optional[bool]=False):
+def arrdf(date: str,
+          ignoreoverrides: Optional[bool]=False,
+          ignore_zeros: bool = typer.Option(False, "--ignore_zeros", help="Ignore customers with zero ARR.")):
     """
     Print ARR table for specific date.
     """
     console = Console()
     engine = database.connect_database(console)
     date = datetime.strptime(date, '%Y-%m-%d').date()
-    df = calc.customer_arr_df(date, engine, ignoreoverrides)
-    display.print_table(df, f'ARR at {date}', console)
+    df = calc.customer_arr_df(date, engine, ignoreoverrides, ignore_zeros)
+    display.print_combined_table(df, f'ARR at {date}', console)
 
 @calc_app.command("carr")
-def carrdf(date: str):
+def carrdf(date: str,
+           ignore_zeros: bool = typer.Option(False, "--ignore_zeros", help="Ignore customers with zero CARR.")):
     """
     Print CARR table for specific date.
     """
     console = Console()
     engine = database.connect_database(console)
     date = datetime.strptime(date, '%Y-%m-%d').date()
-    df = calc.customer_carr_df(date, engine)
-    display.print_table(df, f'CARR at {date}', console)
+    df = calc.customer_carr_df(date, engine, ignore_zeros)
+    display.print_combined_table(df, f'CARR at {date}', console)
 
 @calc_app.command("arrtf")
 def arrtfdf(date: str, timeframe: Optional[str]='M'):
@@ -359,8 +362,7 @@ def arrtfdf(date: str, timeframe: Optional[str]='M'):
 
     df = calc.new_arr_by_timeframe(date, engine, timeframe)
 
-    # Use the adjusted title_date_str in the print_table function
-    display.print_table(df, f'ARR for {title_date_str}', console)
+    display.print_combined_table(df, f'ARR for {title_date_str}', console)
 
 @calc_app.command("arrmetrics")
 def arrmetricsdf(start_date: str, end_date: str, customer: Optional[int]=None, contract: Optional[int]=None, frequency: Optional[str]='M', ignoreoverrides: Optional[bool]=False):
@@ -376,7 +378,7 @@ def arrmetricsdf(start_date: str, end_date: str, customer: Optional[int]=None, c
     df = calc.populate_arr_metrics_df(start_date, end_date, engine, customer, contract, frequency, ignoreoverrides)
     df_title = f'ARR Metrics, {start_date} to {end_date}, frequency: {frequency}'
     
-    display.print_dataframe(df, df_title, console, "ARR Metrics")
+    display.print_combined_table(df, df_title, console, True, "ARR Metrics")
 
     
 # Export commands 

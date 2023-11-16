@@ -481,7 +481,7 @@ def populate_arr_metrics_df(start_date, end_date, engine, customer=None, contrac
     return arr_metrics_df
 
 
-def customer_arr_df(date, engine, ignore_arr_override=False):
+def customer_arr_df(date, engine, ignore_arr_override=False, ignore_zeros=False):
     """
     Generate a DataFrame with ARR for each customer for a given date.
 
@@ -548,19 +548,16 @@ def customer_arr_df(date, engine, ignore_arr_override=False):
     # Set 'CustomerName' as the DataFrame index
     df.set_index('CustomerName', inplace=True)
 
-    df = df.astype(int)
-    #df = df.map(lambda x: int(x))
-
-    # Remove rows where ARR is zero
-    # NEED TO ADD FLAG TO REMOVE THIS
-    # df = df[df['ARR'] != 0]
+    # Remove rows where ARR is zero depending on ignore_zeros flag
+    if ignore_zeros:
+        df = df[df['ARR'] != 0]
     
     total_arr = df['ARR'].sum()
     df.loc['Total ARR'] = total_arr
     
     return df
 
-def customer_carr_df(date, engine):
+def customer_carr_df(date, engine, ignore_zeros=False):
     """Generate a DataFrame with CARR for each customer for a given date."""
     
     # Create an empty DataFrame
@@ -595,11 +592,9 @@ def customer_carr_df(date, engine):
     # Set 'CustomerName' as the DataFrame index
     df.set_index('CustomerName', inplace=True)
 
-    df = df.astype(float)
-    df = df.round(1)
-
-    # Remove rows where ARR is zero
-    df = df[df['CARR'] != 0]
+    # Remove rows where CARR is zero depending on ignore_zeros flag
+    if ignore_zeros:
+        df = df[df['CARR'] != 0]
 
     total_carr = df['CARR'].sum()
     df.loc['Total CARR'] = total_carr

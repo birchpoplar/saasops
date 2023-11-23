@@ -539,7 +539,7 @@ def customer_bkings_df(date, engine, ignore_zeros=False, frequency='M'):
 
     # Convert to DataFrame
     df_bookings = pd.DataFrame(src_df, columns=columns)
- 
+    
     # Create a list of all customers
     customer_names_str = "SELECT DISTINCT Name FROM Customers"
     with engine.begin() as conn:
@@ -569,7 +569,7 @@ def customer_bkings_df(date, engine, ignore_zeros=False, frequency='M'):
         active_bookings = customer_data[(customer_data['contractdate'] >= period_start) & (customer_data['contractdate'] <= period_end)]
 
         # Sum the total bookings for the customer
-        total_bookings = active_bookings['totalvalue'].sum()
+        total_bookings = active_bookings['segmentvalue'].sum()
 
         # Append to the main dataframe
         df.loc[len(df)] = [customer, total_bookings]

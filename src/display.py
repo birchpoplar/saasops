@@ -296,7 +296,7 @@ def print_combined_table(df, title, console: Console, transpose=False, lh_column
         for value in row.values:
             if isinstance(value, float):
                 # Convert float to int to ignore digits after decimal point
-                formatted_value = '{:,}'.format(int(value))
+                formatted_value = '{:,}'.format(int(value)) if not pd.isna(value) else str(0)
             elif isinstance(value, int):
                 # Format integer types with commas
                 formatted_value = '{:,}'.format(value)

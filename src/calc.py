@@ -15,11 +15,23 @@ def populate_bkings_carr_arr_df(start_date, end_date, engine, customer=None, con
     """Generate a DataFrame with Bookings, ARR and CARR for each month."""
 
     console = Console()
+
+    start_date = pd.Timestamp(start_date)
+    end_date = pd.Timestamp(end_date)
+
+
+    # Adjust start_date and end_date for monthly and quarterly aggregation
+    if frequency == 'M':
+        start_date = start_date - pd.offsets.MonthBegin(1)  # First day of the month
+        end_date = end_date + pd.offsets.MonthEnd(0)  # Last day of the month
+    elif frequency == 'Q':
+        start_date = start_date - pd.offsets.QuarterBegin(startingMonth=1)  # First day of the quarter
+        end_date = end_date + pd.offsets.QuarterEnd(0)  # Last day of the quarter
     
     # Generate list of dates
     date_list = []
     current_date = start_date
-
+    
     print_status(console, f"... generating bkings dataframe from {start_date} to {end_date}", MessageStyle.INFO)
     while current_date <= end_date:
         _, last_day = calendar.monthrange(current_date.year, current_date.month)
@@ -27,7 +39,7 @@ def populate_bkings_carr_arr_df(start_date, end_date, engine, customer=None, con
         date_list.append(eom_date)
         
         # Add one month to get the next start_date
-        current_date = eom_date + rd.relativedelta(days=1)
+        current_date = eom_date + pd.offsets.MonthEnd(1)
 
     # Create empty DataFrame with 'ARR' and 'CARR' columns
     df = pd.DataFrame(index=date_list, columns=['Bookings', 'ARR', 'CARR'])
@@ -68,7 +80,7 @@ def populate_bkings_carr_arr_df(start_date, end_date, engine, customer=None, con
     for d in date_list:
         # Get bookings for the month of d
         bookings = df_bookings.loc[(df_bookings['contractdate'].dt.month == d.month) & (df_bookings['contractdate'].dt.year == d.year)]
-        print(bookings)
+
         # Sum the bookings for the month of d
         df.at[d, 'Bookings'] = bookings['totalvalue'].sum()
 
@@ -140,21 +152,19 @@ def populate_bkings_carr_arr_df(start_date, end_date, engine, customer=None, con
 
     df.index = pd.to_datetime(df.index)
 
-    # check if quarterly
     if frequency == 'Q':
-        # for Bookings we take the sum over the quarter
-        df['Bookings'] = df['Bookings'].resample('Q').sum()
-        # for ARR and CARR we take the last value of the quarter
-        df['ARR'] = df['ARR'].resample('Q').last()
-        df['CARR'] = df['CARR'].resample('Q').last()
+        # Aggregate data for quarters
+        df_quarterly = pd.DataFrame()
+        df_quarterly['Bookings'] = df['Bookings'].resample('Q').sum()
+        df_quarterly['ARR'] = df['ARR'].resample('Q').transform('last')
+        df_quarterly['CARR'] = df['CARR'].resample('Q').transform('last')
+        
+        # Reindexing the DataFrame with the new quarterly labels
+        df_quarterly.index = df_quarterly.index.to_period('Q').strftime('Q%q %Y')
 
-        # Reindexing the dataframe with the new quarterly indices
-        df = df.dropna().reindex(pd.date_range(start=start_date, end=end_date, freq='Q'))
-        
-        qtr_labels = [f"Q{period.quarter} {period.year}" for period in df.index]
-        df.index = qtr_labels
-        
-    return df
+        return df_quarterly
+    else:
+        return df    # check if quarterly
 
 
 def populate_revenue_df(start_date, end_date, type, engine, customer=None, contract=None, frequency='M'):
@@ -498,15 +508,47 @@ def customer_bkings_df(date, engine, ignore_zeros=False, frequency='M'):
     # Create an empty DataFrame
     df = pd.DataFrame(columns=['CustomerName', 'Bookings'])
 
-    # Generate the bookings data table
-    df_bookings = generate_subscription_data_table(engine)
+    # Create SQL query
+    query = text("""
+    SELECT
+    c.CustomerID AS "customer id",
+    c.Name AS "customer name",
+    con.ContractID AS "contract id",
+    con.RenewalFromContractID AS "renewalfromcontractid",
+    con.ContractDate AS "contractdate",
+    con.TotalValue AS "totalvalue",
+    seg.SegmentID AS "segmentid",
+    seg.SegmentStartDate AS "segmentstartdate",
+    seg.SegmentEndDate AS "segmentenddate",
+    seg.ARROverrideStartDate AS "arroverridestartdate",
+    seg.ARROverrideNote AS "arroverridenote",
+    seg.SegmentValue AS "segmentvalue", 
+    seg.Type AS "segmenttype"
+    FROM
+    Customers c
+    JOIN
+    Contracts con ON c.CustomerID = con.CustomerID
+    JOIN
+    Segments seg ON con.ContractID = seg.ContractID;
+    """)
+    # Execute query
+    with engine.begin() as conn:
+        result = conn.execute(query)
+        src_df = result.fetchall()
+        columns = result.keys()
 
+    # Convert to DataFrame
+    df_bookings = pd.DataFrame(src_df, columns=columns)
+ 
     # Create a list of all customers
     customer_names_str = "SELECT DISTINCT Name FROM Customers"
     with engine.begin() as conn:
         customer_names_result = conn.execute(text(customer_names_str))
         customer_names = [row[0] for row in customer_names_result.fetchall()]
 
+    # Convert 'contractdate' to datetime
+    df_bookings['contractdate'] = pd.to_datetime(df_bookings['contractdate'])
+        
     # Convert the date string to a datetime object
     date_datetime = pd.Timestamp(date)
     
@@ -543,7 +585,6 @@ def customer_bkings_df(date, engine, ignore_zeros=False, frequency='M'):
     df.loc['Total Bookings'] = total_bookings
 
     return df
-
 
 
 def customer_arr_df(date, engine, ignore_arr_override=False, ignore_zeros=False):

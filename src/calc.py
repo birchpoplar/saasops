@@ -492,6 +492,55 @@ def populate_arr_metrics_df(start_date, end_date, engine, customer=None, contrac
     return arr_metrics_df
 
 
+def populate_ttm_metrics_df(target_date, engine, customer=None, contract=None):
+    """
+    Calculate trailing 12-month metrics.
+
+    Args:
+        target_date:
+        engine:
+    
+    Returns:
+        list: A list of tuples with metric names and their values.
+    """
+    
+    console = Console()
+    print_status(console, f"Calculating TTM NDR and GDR for {target_date}...", MessageStyle.INFO)
+    # Calculate trailing 12-month values for a given date (e.g., 2023-06-15)
+    start_date = pd.to_datetime(target_date) - pd.DateOffset(months=11)
+    end_date = pd.to_datetime(target_date)
+
+    # Source the appropriate dataframes for the metrics calcs
+    metrics_df = populate_metrics_df(start_date, end_date, engine, customer, contract)
+    
+    date_list = metrics_df.index.strftime('%Y-%m-%d').tolist()
+    
+    trailing_start_date = date_list[0]
+    trailing_end_date = date_list[-1]
+ 
+    # Convert trailing_start_date to the same format as the index
+    
+    trailing_df = metrics_df.loc[trailing_start_date:trailing_end_date]
+
+    # Build calcs from the dataframe
+    
+    beginning_arr = trailing_df.loc[trailing_start_date, "Starting MRR"] * 12
+    churn = (-trailing_df["Churn MRR"].sum()) * 12
+    contraction = (-trailing_df["Contraction MRR"].sum()) * 12
+    gross_dollar_retention = beginning_arr + churn + contraction
+    expansion = trailing_df["Expansion MRR"].sum() * 12
+    net_dollar_retention = gross_dollar_retention + expansion
+
+    return [
+        ("Beginning ARR", beginning_arr),
+        ("Churn", churn),
+        ("Contraction", contraction),
+        ("Gross Dollar Retention", gross_dollar_retention),
+        ("Expansion", expansion),
+        ("Net Dollar Retention", net_dollar_retention)
+    ]
+
+
 def customer_bkings_df(date, engine, ignore_zeros=False, frequency='M'):
     """
     Generate a DataFrame with bookings for each customer for a given date.

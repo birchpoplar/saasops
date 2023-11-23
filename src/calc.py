@@ -68,6 +68,7 @@ def populate_bkings_carr_arr_df(start_date, end_date, engine, customer=None, con
     for d in date_list:
         # Get bookings for the month of d
         bookings = df_bookings.loc[(df_bookings['contractdate'].dt.month == d.month) & (df_bookings['contractdate'].dt.year == d.year)]
+        print(bookings)
         # Sum the bookings for the month of d
         df.at[d, 'Bookings'] = bookings['totalvalue'].sum()
 

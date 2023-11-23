@@ -482,6 +482,70 @@ def populate_arr_metrics_df(start_date, end_date, engine, customer=None, contrac
     return arr_metrics_df
 
 
+def customer_bkings_df(date, engine, ignore_zeros=False, frequency='M'):
+    """
+    Generate a DataFrame with bookings for each customer for a given date.
+
+    Args:
+        date (str): The date for which to calculate bookings.
+        engine (sqlalchemy.engine): The SQLAlchemy engine to use for database access.
+        ignore_zeros (bool): Flag to ignore zero-value bookings in the report.
+
+    Returns:
+        df (pandas.DataFrame): A DataFrame with bookings for each customer for a given date.
+    """
+
+    # Create an empty DataFrame
+    df = pd.DataFrame(columns=['CustomerName', 'Bookings'])
+
+    # Generate the bookings data table
+    df_bookings = generate_subscription_data_table(engine)
+
+    # Create a list of all customers
+    customer_names_str = "SELECT DISTINCT Name FROM Customers"
+    with engine.begin() as conn:
+        customer_names_result = conn.execute(text(customer_names_str))
+        customer_names = [row[0] for row in customer_names_result.fetchall()]
+
+    # Convert the date string to a datetime object
+    date_datetime = pd.Timestamp(date)
+    
+    # Determine the period (month or quarter) to include in the calculation
+    if frequency == 'Q':
+        period_start = date_datetime - pd.offsets.MonthBegin(n=0) - pd.offsets.QuarterBegin(startingMonth=1)
+        period_end = date_datetime - pd.offsets.MonthBegin(n=0) + pd.offsets.QuarterEnd(startingMonth=1)
+    else:  # Default to monthly
+        period_start = date_datetime - pd.offsets.MonthBegin(n=0)
+        period_end = date_datetime - pd.offsets.MonthBegin(n=0) + pd.offsets.MonthEnd(n=0)
+
+    # Calculate bookings for each customer
+    for customer in customer_names:
+        # Filter df_bookings for the current customer
+        customer_data = df_bookings[df_bookings['customer name'] == customer]
+
+        # Filter for bookings that are active within the specified period
+        active_bookings = customer_data[(customer_data['contractdate'] >= period_start) & (customer_data['contractdate'] <= period_end)]
+
+        # Sum the total bookings for the customer
+        total_bookings = active_bookings['totalvalue'].sum()
+
+        # Append to the main dataframe
+        df.loc[len(df)] = [customer, total_bookings]
+
+    # Set 'CustomerName' as the DataFrame index
+    df.set_index('CustomerName', inplace=True)
+
+    # Remove rows where bookings are zero depending on ignore_zeros flag
+    if ignore_zeros:
+        df = df[df['Bookings'] != 0]
+
+    total_bookings = df['Bookings'].sum()
+    df.loc['Total Bookings'] = total_bookings
+
+    return df
+
+
+
 def customer_arr_df(date, engine, ignore_arr_override=False, ignore_zeros=False):
     """
     Generate a DataFrame with ARR for each customer for a given date.
@@ -682,6 +746,7 @@ def generate_subscription_data_table(engine):
     con.ContractID AS "contract id",
     con.RenewalFromContractID AS "renewalfromcontractid",
     con.ContractDate AS "contractdate",
+    con.TotalValue AS "totalvalue",
     seg.SegmentID AS "segmentid",
     seg.SegmentStartDate AS "segmentstartdate",
     seg.SegmentEndDate AS "segmentenddate",

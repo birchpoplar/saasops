@@ -237,7 +237,7 @@ def delinvseg(invoice_segment_id: int):
     
 # Calculation commands
 
-@calc_app.command("bkings")
+@calc_app.command("bkingstbl")
 def bkingsdf(start_date: str, end_date: str, customer: Optional[int]=None, contract: Optional[int]=None, frequency: Optional[str]='M', ignoreoverrides: Optional[bool]=False):
     """
     Print bookings, CARR and ARR dataframe.
@@ -254,7 +254,7 @@ def bkingsdf(start_date: str, end_date: str, customer: Optional[int]=None, contr
         df_title += f', contract: {contract}'
     display.print_combined_table(df, df_title, console, "Bookings, ARR, CARR")
 
-@calc_app.command("rev")
+@calc_app.command("revtbl")
 def revdf(
         start_date: str,
         end_date: str,
@@ -286,7 +286,7 @@ def revdf(
         df_title += f', contract: {contract}'
     display.print_combined_table(df, df_title, console, "Revenue")
 
-@calc_app.command("metrics")
+@calc_app.command("metricstbl")
 def metricsdf(
         start_date: str,
         end_date: str,
@@ -310,6 +310,36 @@ def metricsdf(
 
     display.print_combined_table(df, df_title, console, "MRR Metrics")
 
+@calc_app.command("bkings")
+def bkingsdf(date: str,
+             ignore_zeros: bool = typer.Option(False, "--ignore_zeros", help="Ignore customers with zero bookings."),
+             frequency: Optional[str] = 'M'):
+    """
+    Print bookings table for specific date.
+    """
+    console = Console()
+    engine = database.connect_database(console)
+
+    date_obj = datetime.strptime(date, '%Y-%m-%d').date()
+
+    # Determine table title based on the provided frequency
+    if frequency == 'M':
+        title_date_str = date_obj.strftime('%B %Y')  # e.g., "January 2023"
+    elif frequency == 'Q':
+        if date_obj.month in [1, 2, 3]:
+            title_date_str = f"Q1 {date_obj.year}"
+        elif date_obj.month in [4, 5, 6]:
+            title_date_str = f"Q2 {date_obj.year}"
+        elif date_obj.month in [7, 8, 9]:
+            title_date_str = f"Q3 {date_obj.year}"
+        else:
+            title_date_str = f"Q4 {date_obj.year}"
+    else:
+        raise ValueError("Invalid frequency. It should be either 'M' or 'Q'")
+
+    df = calc.customer_bkings_df(date_obj, engine, ignore_zeros, frequency)
+    display.print_combined_table(df, f'Bookings for {title_date_str}', console)
+    
 @calc_app.command("arr")
 def arrdf(date: str,
           ignoreoverrides: Optional[bool]=False,

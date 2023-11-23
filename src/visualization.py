@@ -25,51 +25,18 @@ def round_up_to_base(x, base=5000):
 
 def ttm_ndr_gdr_chart(engine, target_date, customer=None, contract=None):
 
-    console = Console()
-    print_status(console, f"Calculating TTM NDR and GDR for {target_date}...", MessageStyle.INFO)
-    # Calculate trailing 12-month values for a given date (e.g., 2023-06-15)
-    start_date = pd.to_datetime(target_date) - pd.DateOffset(months=11)
-    end_date = pd.to_datetime(target_date)
+    # Call the new function to calculate metrics
+    calculated_metrics = calc.populate_ttm_metrics_df(target_date, engine)
 
-    # Source the appropriate dataframes for the metrics calcs
-    metrics_df = calc.populate_metrics_df(start_date, end_date, engine, customer, contract)
-    
-    date_list = metrics_df.index.strftime('%Y-%m-%d').tolist()
-    
-    trailing_start_date = date_list[0]
-    trailing_end_date = date_list[-1]
- 
-    # Convert trailing_start_date to the same format as the index
-    
-    trailing_df = metrics_df.loc[trailing_start_date:trailing_end_date]
-    
-    beginning_arr = trailing_df.loc[trailing_start_date, "Starting MRR"] * 12
-    churn = (-trailing_df["Churn MRR"].sum()) * 12
-    contraction = (-trailing_df["Contraction MRR"].sum()) * 12
-    gross_dollar_retention = beginning_arr + churn + contraction
-    expansion = trailing_df["Expansion MRR"].sum() * 12
-    net_dollar_retention = gross_dollar_retention + expansion
-    
+    # Extract metric names and values for the chart
+    metrics = [metric[0] for metric in calculated_metrics]
+    values = [metric[1] for metric in calculated_metrics]
+
+    # Print metrics
     print(f"Trailing 12-Month Values for {target_date}:")
-    print(f"Beginning ARR: {beginning_arr:.2f}")
-    print(f"Churn: {-churn:.2f}")
-    print(f"Contraction: {-contraction:.2f}")
-    print(f"Gross Dollar Retention: {gross_dollar_retention:.2f}")
-    print(f"Expansion: {expansion:.2f}")
-    print(f"Net Dollar Retention: {net_dollar_retention:.2f}")
-    
-    # Calculate metrics for trailing 12 months
-    beginning_arr = trailing_df.loc[trailing_start_date, "Starting MRR"] * 12
-    churn = (-trailing_df["Churn MRR"].sum()) * 12
-    contraction = (-trailing_df["Contraction MRR"].sum()) * 12
-    gross_dollar_retention = beginning_arr + churn + contraction
-    expansion = trailing_df["Expansion MRR"].sum() * 12
-    net_dollar_retention = gross_dollar_retention + expansion
-    
-    # Create a bar chart
-    metrics = ["Beginning ARR", "Churn", "Contraction", "Gross Dollar Retention", "Expansion", "Net Dollar Retention"]
-    values = [beginning_arr, churn, contraction, gross_dollar_retention, expansion, net_dollar_retention]
-    
+    for metric, value in calculated_metrics:
+        print(f"{metric}: {value:.2f}")
+   
     fig, ax = plt.subplots(figsize=(10, 6))
     bars = ax.bar(metrics, values, color=[
         COLOR_MAP["navy_blue"],
@@ -79,6 +46,15 @@ def ttm_ndr_gdr_chart(engine, target_date, customer=None, contract=None):
         COLOR_MAP["green_1"],
         COLOR_MAP["teal"]
         ])
+
+    # Since the 'values' list is ordered as ['Beginning ARR', 'Churn', ...]
+    # Use these values directly from the 'values' list
+    beginning_arr = values[0]
+    churn = values[1]
+    contraction = values[2]
+    gross_dollar_retention = values[3]
+    expansion = values[4]
+    net_dollar_retention = values[5]
     
     # Adjust the positioning of floating bars
     bars[1].set_y(beginning_arr)

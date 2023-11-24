@@ -44,7 +44,7 @@ def print_customers(engine, console=None):
     console.print(table)
 
 
-def print_segments(engine, console=None):
+def print_segments(engine, console=None, sort_column=None):
     
     # If no console object is provided, create a new one
     if console is None:
@@ -66,7 +66,6 @@ def print_segments(engine, console=None):
     table.add_column("Type", justify="left")
     table.add_column("Segment Value", justify="right")
     
-    
     # Execute the SQL query to fetch data
     with engine.connect() as conn:
         query = text("""
@@ -76,29 +75,32 @@ def print_segments(engine, console=None):
         JOIN Customers cu ON c.CustomerID = cu.CustomerID;
         """)
         result = conn.execute(query)
-    
-    # Fetch all rows
-    rows = result.fetchall()
-    
-    # Add rows to the Rich table
-    for row in rows:
-        segment_id, contract_id, renewal_from_contract_id, customer_name, contract_date, segment_start_date, segment_end_date, arr_override_date, title, segment_type, segment_value = row
-        table.add_row(
-            str(segment_id), 
-            str(contract_id),
-            str(renewal_from_contract_id),
-            customer_name,
-            str(contract_date),
-            str(segment_start_date), 
-            str(segment_end_date),
-            str(arr_override_date),
-            title, 
-            segment_type, 
-            f"{segment_value:.2f}"
-        )
+        df = pd.DataFrame(result.fetchall(), columns=result.keys())
+
+    # Sort the dataframe by the specified column
+    if sort_column is not None and sort_column in df.columns:
+        df = df.sort_values(by=sort_column)
         
+    # Add rows to the Rich table
+    for row in df.itertuples(index=False):
+        renewal_id = 'N/A' if pd.isna(row.renewalfromcontractid) else str(int(row.renewalfromcontractid))
+        table.add_row(
+            str(row.segmentid), 
+            str(row.contractid),
+            renewal_id,
+            row.name,
+            str(row.contractdate),
+            str(row.segmentstartdate), 
+            str(row.segmentenddate),
+            str(row.arroverridestartdate) if row.arroverridestartdate else 'N/A',
+            row.title, 
+            row.type, 
+            f"{row.segmentvalue:.2f}"
+        )
+
     # Print the table to the console
     console.print(table)
+
 
 def print_segment(engine, segment_id, console=None):
     if console is None:
@@ -160,7 +162,7 @@ def print_contract(engine, contract_id, console=None):
     console.print(table)
         
 
-def print_contracts(engine, console=None):
+def print_contracts(engine, console=None, sort_column=None):
     
     # If no console object is provided, create a new one
     if console is None:
@@ -182,29 +184,32 @@ def print_contracts(engine, console=None):
     with engine.connect() as conn:
         # Execute the SQL query to fetch data
         result = conn.execute(text("SELECT * FROM Contracts;"))
-    
-    # Fetch all rows
-    rows = result.fetchall()
+        # Convert the result object to a dataframe
+        df = pd.DataFrame(result.fetchall(), columns=result.keys())
+
+    # Sort the dataframe by the specified column
+    if sort_column is not None and sort_column in df.columns:
+        df = df.sort_values(by=sort_column)
 
     # Add rows to the Rich table
-    for row in rows:
-        contract_id, customer_id, renewal_from_contract_id, reference, contract_date, term_start_date, term_end_date, total_value = row
+    for row in df.itertuples(index=False):
+        renewalid = 'N/A' if pd.isna(row.renewalfromcontractid) else str(int(row.renewalfromcontractid))
         table.add_row(
-            str(contract_id), 
-            str(customer_id), 
-            str(renewal_from_contract_id) if renewal_from_contract_id else 'N/A', 
-            reference, 
-            str(contract_date), 
-            str(term_start_date), 
-            str(term_end_date), 
-            f"{total_value:.2f}"
+            str(row.contractid), 
+            str(row.customerid),
+            renewalid,
+            row.reference, 
+            str(row.contractdate), 
+            str(row.termstartdate), 
+            str(row.termenddate), 
+            f"{row.totalvalue:.2f}"
         )
-        
+
     # Print the table to the console
     console.print(table)
     
-    
-def print_invoices(engine, console=None):
+
+def print_invoices(engine, console=None, sort_column=None):
     # If no console object is provided, create a new one
     if console is None:
         console = Console()
@@ -232,27 +237,27 @@ def print_invoices(engine, console=None):
             LEFT JOIN Contracts con ON s.ContractID = con.ContractID
             LEFT JOIN Customers c ON con.CustomerID = c.CustomerID;
         """))
+        df = pd.DataFrame(result.fetchall(), columns=result.keys())
+
+    # Sort the dataframe by the specified column
+    if sort_column is not None and sort_column in df.columns:
+        df = df.sort_values(by=sort_column)
         
-        # Fetch all rows
-        rows = result.fetchall()
-        
-        # Add rows to the Rich table
-        for row in rows:
-            customer_name, contract_id, segment_id, invoice_id, invoice_number, invoice_date, days_payable, amount = row
-            table.add_row(
-                customer_name,
-                str(contract_id),
-                str(segment_id),
-                str(invoice_id),
-                invoice_number,
-                str(invoice_date),
-                str(days_payable),
-                f"{amount:.2f}"
-            )
-            
+    # Add rows to the Rich table
+    for row in df.itertuples(index=False):
+        table.add_row(
+            row.name,
+            str(row.contractid),
+            str(row.segmentid),
+            str(row.invoiceid),
+            row.number,
+            row.date.strftime('%Y-%m-%d') if row.date else 'N/A',
+            str(row.dayspayable),
+            f"{row.amount:.2f}"
+        )
+
     # Print the table to the console
-    console.print(table)
-    
+    console.print(table)   
     
 # Dataframe display functions   
 

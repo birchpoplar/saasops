@@ -75,13 +75,13 @@ def custupd(customer_id: int, field: str, value: str):
 # Contract commands
 
 @contract_app.command("list")
-def listcont():
+def listcont(sort_column: Optional[str]=None):
     """
     List all contracts.
     """
     console = Console()
     engine = database.connect_database(console)
-    display.print_contracts(engine, console)
+    display.print_contracts(engine, console, sort_column)
 
 @contract_app.command("add")
 def contadd(customer_id: int, reference: str, contract_date: str, term_start_date: str, term_end_date: str, total_value: int, renewal_id: Optional[int]=None):
@@ -142,13 +142,13 @@ def unlinkedcont():
 # Segment commands
 
 @segment_app.command("list")
-def listseg():
+def listseg(sort_column: Optional[str]=None):
     """
     List all segments.
     """
     console = Console()
     engine = database.connect_database(console)
-    display.print_segments(engine, console)
+    display.print_segments(engine, console, sort_column)
 
 @segment_app.command("print")
 def prntseg(segment_id: int):
@@ -189,13 +189,13 @@ def segupd(segment_id: int, field: str, value: str):
 # Invoice commands
 
 @invoice_app.command("list")
-def listinv():
+def listinv(sort_column: Optional[str]=None):
     """
     List all invoices.
     """
     console = Console()
     engine = database.connect_database(console)
-    display.print_invoices(engine, console)
+    display.print_invoices(engine, console, sort_column)
 
 @invoice_app.command("add")
 def invadd(number: str, date: str, dayspayable: int, amount: int):

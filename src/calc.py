@@ -2,7 +2,9 @@ from src import utils
 from src.utils import print_status
 from sqlalchemy import text
 from src.classes import MessageStyle
-from rich.console import Console
+from rich.console import Console, Group
+from rich.table import Table
+from rich.tree import Tree
 from datetime import date, timedelta
 import dateutil.relativedelta as rd
 import psycopg2
@@ -541,7 +543,7 @@ def populate_ttm_metrics_df(target_date, engine, customer=None, contract=None):
     ]
 
 
-def customer_bkings_df(date, engine, ignore_zeros=False, frequency='M'):
+def customer_bkings_df(date, engine, ignore_zeros=False, frequency='M', tree_detail=False):
     """
     Generate a DataFrame with bookings for each customer for a given date.
 
@@ -595,6 +597,10 @@ def customer_bkings_df(date, engine, ignore_zeros=False, frequency='M'):
         customer_names_result = conn.execute(text(customer_names_str))
         customer_names = [row[0] for row in customer_names_result.fetchall()]
 
+    # if tree_detail requested
+    if tree_detail:
+        root = Tree("Bookings Tree", highlight=True)        
+
     # Convert 'contractdate' to datetime
     df_bookings['contractdate'] = pd.to_datetime(df_bookings['contractdate'])
         
@@ -616,7 +622,29 @@ def customer_bkings_df(date, engine, ignore_zeros=False, frequency='M'):
 
         # Filter for bookings that are active within the specified period
         active_bookings = customer_data[(customer_data['contractdate'] >= period_start) & (customer_data['contractdate'] <= period_end)]
-
+        
+        # Add table to the tree node if tree_detail requested
+        if tree_detail and not active_bookings.empty:
+            node = root.add(f"Customer: {customer}")
+            table = Table(show_header=True, show_lines=True)
+            columns = ['contract id', 'contractdate', 'totalvalue']
+            for col in columns:
+                table.add_column(col)
+            for index, row in active_bookings.iterrows():
+                row_values = []
+                for col in columns:
+                    if 'date' in col:  # Check if the column is a date
+                        row_values.append(row[col].strftime('%Y-%m-%d') if pd.notna(row[col]) else 'N/A')
+                    elif pd.api.types.is_float_dtype(active_bookings[col]):  # Check if the column is float
+                        # Convert to int and format with thousands separator
+                        row_values.append(f"{int(row[col]):,}" if pd.notna(row[col]) else 'N/A')
+                    elif pd.api.types.is_numeric_dtype(row[col]):  # Other numeric types
+                        row_values.append(f"{row[col]:,}")
+                    else:
+                        row_values.append(str(row[col]))
+                table.add_row(*row_values)
+            node.add(Group("Booked Contracts", table))
+        
         # Sum the total bookings for the customer
         total_bookings = active_bookings['segmentvalue'].sum()
 
@@ -633,10 +661,15 @@ def customer_bkings_df(date, engine, ignore_zeros=False, frequency='M'):
     total_bookings = df['Bookings'].sum()
     df.loc['Total Bookings'] = total_bookings
 
+    # If tree_detail then print the tree
+    if tree_detail:
+        console = Console()
+        console.print(root)
+    
     return df
 
 
-def customer_arr_df(date, engine, ignore_arr_override=False, ignore_zeros=False):
+def customer_arr_df(date, engine, ignore_arr_override=False, ignore_zeros=False, tree_detail=False):
     """
     Generate a DataFrame with ARR for each customer for a given date.
 
@@ -659,9 +692,14 @@ def customer_arr_df(date, engine, ignore_arr_override=False, ignore_zeros=False)
         customer_names_result = conn.execute(text(customer_names_str))
         customer_names = [row[0] for row in customer_names_result.fetchall()]
 
+    # if tree_detail requested
+    if tree_detail:
+        root = Tree("ARR Tree", highlight=True)
+        
     # Calculate ARR for each customer
     date_datetime = pd.Timestamp(date)
     for customer in customer_names:
+
         # Filter df_arr for the current customer
         customer_data = df_arr[df_arr['customer name'] == customer].copy()
 
@@ -693,6 +731,28 @@ def customer_arr_df(date, engine, ignore_arr_override=False, ignore_zeros=False)
 
         # Further filter for segments that are active on the provided date
         active_segments = customer_data[(customer_data['effective_start_date'] <= date_datetime) & (customer_data['segmentenddate'] >= date_datetime)]
+
+        # Add table to the tree node if tree_detail requested
+        if tree_detail and not active_segments.empty:
+            node = root.add(f"Customer: {customer}")
+            table = Table(show_header=True, show_lines=True)
+            columns = ['contract id', 'contractdate', 'arroverridestartdate', 'segmentstartdate', 'segmentenddate', 'segmentvalue']
+            for col in columns:
+                table.add_column(col)
+            for index, row in active_segments.iterrows():
+                row_values = []
+                for col in columns:
+                    if 'date' in col:  # Check if the column is a date
+                        row_values.append(row[col].strftime('%Y-%m-%d') if pd.notna(row[col]) else 'N/A')
+                    elif pd.api.types.is_float_dtype(active_segments[col]):  # Check if the column is float
+                        # Convert to int and format with thousands separator
+                        row_values.append(f"{int(row[col]):,}" if pd.notna(row[col]) else 'N/A')
+                    elif pd.api.types.is_numeric_dtype(row[col]):  # Other numeric types
+                        row_values.append(f"{row[col]:,}")
+                    else:
+                        row_values.append(str(row[col]))
+                table.add_row(*row_values)
+            node.add(Group("Active Segments", table))
         
         # Calculate the total ARR for the customer
         total_arr = active_segments['annualvalue'].sum()
@@ -709,10 +769,15 @@ def customer_arr_df(date, engine, ignore_arr_override=False, ignore_zeros=False)
     
     total_arr = df['ARR'].sum()
     df.loc['Total ARR'] = total_arr
+
+    # If tree_detail then print the tree
+    if tree_detail:
+        console = Console()
+        console.print(root)
     
     return df
 
-def customer_carr_df(date, engine, ignore_zeros=False):
+def customer_carr_df(date, engine, ignore_zeros=False, tree_detail=False):
     """Generate a DataFrame with CARR for each customer for a given date."""
     
     # Create an empty DataFrame
@@ -726,6 +791,10 @@ def customer_carr_df(date, engine, ignore_zeros=False):
         customer_names_result = conn.execute(text(customer_names_str))
         customer_names = [row[0] for row in customer_names_result.fetchall()]
 
+    # if tree_detail requested
+    if tree_detail:
+        root = Tree("ARR Tree", highlight=True)        
+        
     date_datetime = pd.Timestamp(date)
     for customer in customer_names:
         customer_data = df_carr[df_carr['customer name'] == customer].copy()
@@ -737,6 +806,29 @@ def customer_carr_df(date, engine, ignore_zeros=False):
         # For contracts that are renewed, remove the original contract if the active segments dataframe contains the renewed contract
         # as well as the renewing contract, which can be done by looping through contract id and seeing if renewalfromcontractid is the same as the contract id
         active_segments = active_segments[~active_segments['contract id'].isin(active_segments['renewalfromcontractid'])]
+
+        # Add table to the tree node if tree_detail requested
+        if tree_detail and not active_segments.empty:
+            node = root.add(f"Customer: {customer}")
+            table = Table(show_header=True, show_lines=True)
+            columns = ['contract id', 'contractdate', 'arroverridestartdate', 'segmentstartdate', 'segmentenddate', 'segmentvalue']
+            for col in columns:
+                table.add_column(col)
+            for index, row in active_segments.iterrows():
+                row_values = []
+                for col in columns:
+                    if 'date' in col:  # Check if the column is a date
+                        row_values.append(row[col].strftime('%Y-%m-%d') if pd.notna(row[col]) else 'N/A')
+                    elif pd.api.types.is_float_dtype(active_segments[col]):  # Check if the column is float
+                        # Convert to int and format with thousands separator
+                        row_values.append(f"{int(row[col]):,}" if pd.notna(row[col]) else 'N/A')
+                    elif pd.api.types.is_numeric_dtype(row[col]):  # Other numeric types
+                        row_values.append(f"{row[col]:,}")
+                    else:
+                        row_values.append(str(row[col]))
+                table.add_row(*row_values)
+            node.add(Group("Active Segments", table))
+
         
         # Calculate total CARR for the customer
         total_carr = active_segments['annualvalue'].sum()
@@ -753,7 +845,12 @@ def customer_carr_df(date, engine, ignore_zeros=False):
 
     total_carr = df['CARR'].sum()
     df.loc['Total CARR'] = total_carr
-    
+
+    # If tree_detail then print the tree
+    if tree_detail:
+        console = Console()
+        console.print(root)
+
     return df
 
 

@@ -313,7 +313,8 @@ def metricsdf(
 @calc_app.command("bkings")
 def bkingsdf(date: str,
              ignore_zeros: bool = typer.Option(False, "--ignore_zeros", help="Ignore customers with zero bookings."),
-             frequency: Optional[str] = 'M'):
+             frequency: Optional[str] = 'M',
+             tree_detail: Optional[bool] = False):
     """
     Print bookings table for specific date.
     """
@@ -337,32 +338,34 @@ def bkingsdf(date: str,
     else:
         raise ValueError("Invalid frequency. It should be either 'M' or 'Q'")
 
-    df = calc.customer_bkings_df(date_obj, engine, ignore_zeros, frequency)
+    df = calc.customer_bkings_df(date_obj, engine, ignore_zeros, frequency, tree_detail)
     display.print_combined_table(df, f'Bookings for {title_date_str}', console)
     
 @calc_app.command("arr")
 def arrdf(date: str,
           ignoreoverrides: Optional[bool]=False,
-          ignore_zeros: bool = typer.Option(False, "--ignore_zeros", help="Ignore customers with zero ARR.")):
+          ignore_zeros: bool = typer.Option(False, "--ignore_zeros", help="Ignore customers with zero ARR."),
+          tree_detail: Optional[bool]=False):
     """
     Print ARR table for specific date.
     """
     console = Console()
     engine = database.connect_database(console)
     date = datetime.strptime(date, '%Y-%m-%d').date()
-    df = calc.customer_arr_df(date, engine, ignoreoverrides, ignore_zeros)
+    df = calc.customer_arr_df(date, engine, ignoreoverrides, ignore_zeros, tree_detail)
     display.print_combined_table(df, f'ARR at {date}', console)
 
 @calc_app.command("carr")
 def carrdf(date: str,
-           ignore_zeros: bool = typer.Option(False, "--ignore_zeros", help="Ignore customers with zero CARR.")):
+           ignore_zeros: bool = typer.Option(False, "--ignore_zeros", help="Ignore customers with zero CARR."),
+           tree_detail: Optional[bool]=False):
     """
     Print CARR table for specific date.
     """
     console = Console()
     engine = database.connect_database(console)
     date = datetime.strptime(date, '%Y-%m-%d').date()
-    df = calc.customer_carr_df(date, engine, ignore_zeros)
+    df = calc.customer_carr_df(date, engine, ignore_zeros, tree_detail)
     display.print_combined_table(df, f'CARR at {date}', console)
 
 @calc_app.command("arrtf")

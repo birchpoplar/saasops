@@ -440,4 +440,5 @@ def print_contracts_without_segments(engine, console=None):
             console.print(f"Contracts without segments:\n{contracts_info}")
 
     return
-        
+
+

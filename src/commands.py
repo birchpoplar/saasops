@@ -27,13 +27,22 @@ app.add_typer(export_app, name="export")
 
 # Database selection commands
 
-@app.command()
+@app.command("set_db")
 def set_db(db_name: str):
     """
     Set the database to use.
     """
     os.environ["DB_NAME"] = db_name
+    typer.echo(f"Database set to: {db_name}")
 
+@app.command("get_db")
+def get_db():
+    """
+    Get the current database in use.
+    """
+    db_name = os.environ.get("DB_NAME", "testdb")
+    typer.echo(f"Current database: {db_name}")
+    
 # Customer commands
     
 @customer_app.command("list")
@@ -42,8 +51,8 @@ def listcust():
     List all customers.
     """
     console = Console()
-    engine = database.connect_database(console)
-    display.print_customers(engine, console)
+    con = database.connect_database(console)
+    display.print_customers(con, console)
 
 @customer_app.command("add")
 def custadd(name: str, city: str, state: str):

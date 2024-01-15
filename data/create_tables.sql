@@ -1,6 +1,6 @@
 -- Create Customers table
 CREATE TABLE Customers (
-    CustomerID SERIAL PRIMARY KEY,
+    CustomerID INTEGER PRIMARY KEY,
     Name TEXT,
     City TEXT,
     State TEXT
@@ -8,7 +8,7 @@ CREATE TABLE Customers (
 
 -- Create Contracts table
 CREATE TABLE Contracts (
-    ContractID SERIAL PRIMARY KEY,
+    ContractID INTEGER PRIMARY KEY,
     CustomerID INTEGER,
     RenewalFromContractID INTEGER,
     Reference TEXT,
@@ -22,7 +22,7 @@ CREATE TABLE Contracts (
 
 -- Create Segments table
 CREATE TABLE Segments (
-    SegmentID SERIAL PRIMARY KEY,
+    SegmentID INTEGER PRIMARY KEY,
     ContractID INTEGER,
     SegmentStartDate DATE,
     SegmentEndDate DATE,
@@ -36,7 +36,7 @@ CREATE TABLE Segments (
 
 -- Create Invoices table
 CREATE TABLE Invoices (
-    InvoiceID SERIAL PRIMARY KEY,
+    InvoiceID INTEGER PRIMARY KEY,
     Number TEXT,
     Date DATE,
     DaysPayable INTEGER,
@@ -45,7 +45,7 @@ CREATE TABLE Invoices (
 
 -- Create InvoiceSegments table
 CREATE TABLE InvoiceSegments (
-    InvoiceSegmentID SERIAL PRIMARY KEY,
+    InvoiceSegmentID INTEGER PRIMARY KEY,
     InvoiceID INTEGER,
     SegmentID INTEGER,
     FOREIGN KEY (InvoiceID) REFERENCES Invoices(InvoiceID),

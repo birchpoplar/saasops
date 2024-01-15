@@ -7,6 +7,9 @@ secure_*.sql
 .dir-locals.el
 # also the test images created
 *.png
+# duckdb CLI client
+duckdb
+duckdb*
 
 # exclude the exports folder
 exports/

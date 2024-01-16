@@ -16,8 +16,7 @@ CREATE TABLE Contracts (
     TermStartDate DATE,
     TermEndDate DATE,
     TotalValue REAL,
-    FOREIGN KEY (CustomerID) REFERENCES Customers(CustomerID),
-    FOREIGN KEY (RenewalFromContractID) REFERENCES Contracts(ContractID)
+    FOREIGN KEY (CustomerID) REFERENCES Customers(CustomerID)
 );
 
 -- Create Segments table

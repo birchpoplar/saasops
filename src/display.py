@@ -66,34 +66,42 @@ def print_segments(con, console=None, sort_column=None):
     table.add_column("Segment Value", justify="right")
     
     # Execute the SQL query to fetch data
-    query = text("""
+    query = """
     SELECT s.SegmentID, s.ContractID, c.RenewalFromContractID, cu.Name, c.ContractDate, s.SegmentStartDate, s.SegmentEndDate, s.ARROverrideStartDate, s.Title, s.Type, s.SegmentValue
     FROM Segments s
     JOIN Contracts c ON s.ContractID = c.ContractID
     JOIN Customers cu ON c.CustomerID = cu.CustomerID;
-    """)
+    """
+
     result = con.execute(query)
-    df = pd.DataFrame(result.fetchall(), columns=result.keys())
+
+    # Fetch all rows
+    rows = result.fetchall()
+
+    # Get column names
+    column_names = [desc[0] for desc in result.description]
+
+    # Create a dataframe from the rows
+    df = pd.DataFrame(rows, columns=column_names)
 
     # Sort the dataframe by the specified column
     if sort_column is not None and sort_column in df.columns:
         df = df.sort_values(by=sort_column)
         
     # Add rows to the Rich table
-    for row in df.itertuples(index=False):
-        renewal_id = 'N/A' if pd.isna(row.renewalfromcontractid) else str(int(row.renewalfromcontractid))
+    for row in rows:
         table.add_row(
-            str(row.segmentid), 
-            str(row.contractid),
-            renewal_id,
-            row.name,
-            str(row.contractdate),
-            str(row.segmentstartdate), 
-            str(row.segmentenddate),
-            str(row.arroverridestartdate) if row.arroverridestartdate else 'N/A',
-            row.title, 
-            row.type, 
-            f"{row.segmentvalue:.2f}"
+            str(row[column_names.index('SegmentID')]), 
+            str(row[column_names.index('ContractID')]),
+            str(int(row[column_names.index('RenewalFromContractID')])) if row[column_names.index('RenewalFromContractID')] else 'N/A',
+            row[column_names.index('Name')],
+            str(row[column_names.index('ContractDate')]),
+            str(row[column_names.index('SegmentStartDate')]), 
+            str(row[column_names.index('SegmentEndDate')]),
+            str(row[column_names.index('ARROverrideStartDate')]) if row[column_names.index('ARROverrideStartDate')] else 'N/A',
+            row[column_names.index('Title')], 
+            row[column_names.index('Type')], 
+            f"{row[column_names.index('SegmentValue')]:.2f}"
         )
 
     # Print the table to the console

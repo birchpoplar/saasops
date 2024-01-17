@@ -138,3 +138,58 @@ class SegmentData:
         self.title = title
         self.type = type
         self.segment_value = segment_value
+
+        
+class ARRMetricsCalculator:
+    def __init__(self, contracts, start_period, end_period):
+        self.contracts = contracts
+        self.start_period = start_period
+        self.end_period = end_period
+        self.metrics = {
+            'New': 0,
+            'Expansion': 0,
+            'Contraction': 0,
+            'Churn': 0
+        }
+
+    def calculate_arr_changes(self):
+        for contract in self.contracts:
+            if self.is_new_contract(contract):
+                self.metrics['New'] += contract.total_value
+            elif self.is_contract_ending(contract):
+                if self.is_renewal_contract(contract):
+                    change = self.calculate_renewal_change(contract)
+                    if change > 0:
+                        self.metrics['Expansion'] += change
+                    else:
+                        self.metrics['Contraction'] += abs(change)
+                else:
+                    self.metrics['Churn'] += contract.total_value
+
+    def is_new_contract(self, contract):
+        return self.start_period <= contract.term_start_date <= self.end_period and contract.renewal_from_contract_id is None
+
+    def is_contract_ending(self, contract):
+        return self.start_period <= contract.term_end_date <= self.end_period
+
+    def is_renewal_contract(self, contract):
+        # Logic to determine if a contract is a renewal
+        # You might need to access previous contracts to check this
+        return contract.renewal_from_contract_id is not None
+
+    def calculate_renewal_change(self, contract):
+        # Logic to compare the ARR of the current contract with its previous version
+        # You'll need to fetch the previous contract using `contract.renewal_from_contract_id`
+        # and compare its `total_value` with the current contract's `total_value`
+        previous_contract = self.get_previous_contract(contract)
+        if previous_contract:
+            return contract.total_value - previous_contract.total_value
+        return 0
+
+    def get_previous_contract(self, contract):
+        # Logic to retrieve the previous contract
+        # This might involve searching your contract list or database
+        for prev_contract in self.contracts:
+            if prev_contract.contract_id == contract.renewal_from_contract_id:
+                return prev_contract
+        return None

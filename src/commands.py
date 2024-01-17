@@ -246,22 +246,22 @@ def listseg(sort_column: Optional[str]=None):
     
 # Calculation commands
 
-# @calc_app.command("bkingstbl")
-# def bkingsdf(start_date: str, end_date: str, customer: Optional[int]=None, contract: Optional[int]=None, frequency: Optional[str]='M', ignoreoverrides: Optional[bool]=False):
-#     """
-#     Print bookings, CARR and ARR dataframe.
-#     """
-#     console = Console()
-#     engine = database.connect_database(console)
-#     start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
-#     end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
-#     df = calc.populate_bkings_carr_arr_df(start_date, end_date, engine, customer, contract, frequency, ignoreoverrides)
-#     df_title = f'Bookings, ARR and CARR, {start_date} to {end_date}, frequency: {frequency}'
-#     if customer:
-#         df_title += f', customer: {customer}'
-#     if contract:
-#         df_title += f', contract: {contract}'
-#     display.print_combined_table(df, df_title, console, "Bookings, ARR, CARR")
+@calc_app.command("bkingsdf")
+def bkingsdf(start_date: str, end_date: str, customer: Optional[int]=None, contract: Optional[int]=None, timeframe: Optional[str]='M', ignoreoverrides: Optional[bool]=False):
+    """
+    Print bookings dataframe.
+    """
+    console = Console()
+    con = database.connect_database(console)
+    start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+    end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+    df = calc.customer_bkings_df(start_date, end_date, con, timeframe)
+    df_title = f'Bookings, ARR and CARR, {start_date} to {end_date}, frequency: {timeframe}'
+    if customer:
+        df_title += f', customer: {customer}'
+    if contract:
+        df_title += f', contract: {contract}'
+    display.print_combined_table(df, df_title, console, "Bookings")
 
 # @calc_app.command("revtbl")
 # def revdf(
@@ -320,7 +320,7 @@ def listseg(sort_column: Optional[str]=None):
 #     display.print_combined_table(df, df_title, console, "MRR Metrics")
 
 @calc_app.command("bkings")
-def bkingsdf(date: str,
+def bkingstbl(date: str,
              ignore_zeros: bool = typer.Option(False, "--ignore_zeros", help="Ignore customers with zero bookings."),
              timeframe: Optional[str] = 'M'):
     """
@@ -332,13 +332,13 @@ def bkingsdf(date: str,
     # Determine table title based on the provided frequency
     title_date_str = calc.get_timeframe_title(date, timeframe)
 
-    df = calc.customer_bkings_df(date, con, timeframe)
+    df = calc.customer_bkings_tbl(date, con, timeframe)
 
     display.print_combined_table(df, f'Bookings for {title_date_str}', console)
 
     
 @calc_app.command("arr")
-def arrdf(date: str,
+def arrtbl(date: str,
           # ignoreoverrides: Optional[bool]=False,
           ignore_zeros: bool = typer.Option(False, "--ignore_zeros", help="Ignore customers with zero ARR."),
           tree_detail: Optional[bool]=False):
@@ -348,7 +348,7 @@ def arrdf(date: str,
     console = Console()
     con = database.connect_database(console)
     date = datetime.strptime(date, '%Y-%m-%d').date()
-    df = calc.customer_arr_df(date, con, ignore_zeros, tree_detail)
+    df = calc.customer_arr_tbl(date, con, ignore_zeros, tree_detail)
     display.print_combined_table(df, f'ARR at {date}', console)
 
 # @calc_app.command("carr")

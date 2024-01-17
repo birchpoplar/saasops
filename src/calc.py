@@ -13,9 +13,10 @@ import logging
 import calendar
 import numpy as np
 
+
 # ARR Calculation Functions
 
-def customer_arr_df(date, con, ignore_zeros=False, tree_detail=False):
+def customer_arr_tbl(date, con, ignore_zeros=False, tree_detail=False):
 
     # Build temp table in database of ARR data
     build_arr_table(con)
@@ -42,6 +43,7 @@ def customer_arr_df(date, con, ignore_zeros=False, tree_detail=False):
     delete_arr_table(con)
     
     return df
+
 
 def new_arr_by_timeframe(date, con, timeframe="M", ignore_zeros=False):
 
@@ -72,7 +74,7 @@ def new_arr_by_timeframe(date, con, timeframe="M", ignore_zeros=False):
     delete_arr_table(con)
 
     return df
-    
+
 
 def build_arr_table(con):
     """
@@ -175,11 +177,12 @@ def delete_arr_table(con):
     delete_table_query = "DROP TABLE IF EXISTS ARRTable;"
     con.execute(delete_table_query)
     print("ARRTable deleted.")
-    return
+    return 
+
 
 # Bookings calculation functions
 
-def customer_bkings_df(date, con, timeframe='M', ignore_zeros=True, tree_detail=False):  
+def customer_bkings_tbl(date, con, timeframe='M', ignore_zeros=True, tree_detail=False):  
 
     # Calculate the start and end dates for the given timeframe
     start_date, end_date = calculate_timeframe(date, timeframe)
@@ -202,7 +205,42 @@ def customer_bkings_df(date, con, timeframe='M', ignore_zeros=True, tree_detail=
         df = df[df['TotalNewBookings'] != 0]
      
     return df
-    
+
+def customer_bkings_df(start_date, end_date, con, timeframe='M', ignore_zeros=True):  
+    # Create an empty DataFrame for the final results
+    final_df = pd.DataFrame()
+
+    current_date = start_date
+    while current_date <= end_date:
+        # Calculate the start and end dates for the current period
+        period_start, period_end = calculate_timeframe(current_date, timeframe)
+        
+        # Query to get data for the current period
+        query = f"""
+        SELECT cu.Name AS CustomerName, SUM(c.TotalValue) AS TotalNewBookings
+        FROM Contracts c
+        JOIN Customers cu ON c.CustomerID = cu.CustomerID
+        WHERE c.ContractDate BETWEEN '{period_start}' AND '{period_end}'
+        GROUP BY cu.Name;
+        """
+
+        cursor = con.execute(query)
+        df = cursor.fetchdf()
+        df.set_index('CustomerName', inplace=True)
+        
+        if ignore_zeros:
+            df = df[df['TotalNewBookings'] != 0]
+
+        # Add the results to the final DataFrame
+        final_df = final_df.join(df, rsuffix=f'_{period_start}', how='outer')
+
+        # Move to the next period
+        current_date = (period_end + pd.Timedelta(days=1)).date()
+        
+    final_df.fillna(0, inplace=True)  # Replace NaN with 0
+    print(final_df)
+    return final_df
+
 
 # Date helper functions
 

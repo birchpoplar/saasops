@@ -4,7 +4,11 @@ from rich.table import Table
 from datetime import datetime
 import pandas as pd
 
-from src import classes, database, calc, visualization
+import saasops.calc as calc
+import saasops.database as database
+import saasops.visualization as visualization
+import saasops.classes as classes
+
 from pptx import Presentation
 from pptx.util import Inches, Pt
 

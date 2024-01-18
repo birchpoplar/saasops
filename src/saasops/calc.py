@@ -1,7 +1,6 @@
-from src import utils
-from src.utils import print_status
+import saasops.utils as utils
+from saasops.classes import MessageStyle, SegmentData, SegmentContext
 from sqlalchemy import text
-from src.classes import MessageStyle, SegmentData, SegmentContext
 from rich.console import Console, Group
 from rich.table import Table
 from rich.tree import Tree

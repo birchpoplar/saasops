@@ -7,9 +7,11 @@ from datetime import datetime
 import pandas as pd
 import numpy as np
 from sqlalchemy import text
-from src.utils import print_status
-from src.classes import MessageStyle
-from src import classes, database, calc
+import saasops.utils as utils
+import saasops.database as database
+import saasops.calc as calc
+from saasops.classes import MessageStyle
+
 
 # Database display functions
 
@@ -19,7 +21,7 @@ def print_customers(con, console=None):
     if console is None:
         console = Console()
         
- https://setuptools.pypa.io/en/latest/userguide/development_mode.htmo   # Initialize the Table
+    # Initialize the Table
     table = Table(title="Customers")
     
     # Add columns

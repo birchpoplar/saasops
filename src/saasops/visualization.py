@@ -6,13 +6,17 @@ import dateutil.relativedelta as rd
 import textwrap
 from dotenv import load_dotenv
 import os
-from src import classes, display, database, calc, visualization
+
+import saasops.classes as classes
+import saasops.display as display
+import saasops.database as database
+import saasops.calc as calc
+import saasops.visualization as visualization
+
 from matplotlib.ticker import FuncFormatter, FixedLocator
 import numpy as np
 import math
-from constants import COLOR_MAP
-from src.utils import print_status
-from src.classes import MessageStyle
+from saasops.constants import COLOR_MAP
 from rich.console import Console
 
 def thousands_formatter(x, pos):

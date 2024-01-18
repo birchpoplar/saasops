@@ -1,4 +1,8 @@
-from src import database, display, export, calc
+import saasops.database as database
+import saasops.display as display
+import saasops.export as export
+import saasops.calc as calc
+# import saasops.database, display, export, calc
 from typer import Typer
 import typer
 from rich.console import Console
@@ -6,6 +10,9 @@ from datetime import date, datetime, timedelta
 from typing import Optional
 import calendar
 import os
+import logging
+
+logging.basicConfig(level=logging.ERROR)
 
 app = Typer(name="saasops")
 

@@ -3,8 +3,8 @@ import psycopg2
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine, text
 from saasops.classes import MessageStyle
-import saasops.utils
-import saasops.display
+import saasops.utils as utils
+import saasops.display as display
 from rich.console import Console
 import textwrap
 import pandas as pd
@@ -35,7 +35,7 @@ def connect_database(console):
     con = duckdb.connect(database=db_filename)
 
     # Print success status
-    # print_status(console, f"... connected to database {db_prefix} successfully", MessageStyle.SUCCESS)
+    utils.print_status(console, f"... connected to database {db_prefix} successfully", MessageStyle.SUCCESS)
 
     return con
 

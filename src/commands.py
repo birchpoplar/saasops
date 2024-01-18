@@ -247,7 +247,7 @@ def listseg(sort_column: Optional[str]=None):
 # Calculation commands
 
 @calc_app.command("bkingsdf")
-def bkingsdf(start_date: str, end_date: str, customer: Optional[int]=None, contract: Optional[int]=None, timeframe: Optional[str]='M', ignoreoverrides: Optional[bool]=False):
+def bkingsdf(start_date: str, end_date: str, customer: Optional[int]=None, contract: Optional[int]=None, timeframe: Optional[str]='M', format_type: Optional[str]='dollar', ignoreoverrides: Optional[bool]=False):
     """
     Print bookings dataframe.
     """
@@ -256,13 +256,23 @@ def bkingsdf(start_date: str, end_date: str, customer: Optional[int]=None, contr
     start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
     end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
     df = calc.customer_bkings_df(start_date, end_date, con, timeframe)
-    df_title = f'Bookings, ARR and CARR, {start_date} to {end_date}, frequency: {timeframe}'
-    if customer:
-        df_title += f', customer: {customer}'
-    if contract:
-        df_title += f', contract: {contract}'
-    display.print_combined_table(df, df_title, console, "Bookings")
+    df_title = display.generate_title("Bookings by Customer", start_date, end_date, timeframe, format_type, customer, contract)
+    display.print_combined_table(df, df_title, console, format_type) 
 
+@calc_app.command("arrdf")
+def arrdf(start_date: str, end_date: str, customer: Optional[int]=None, contract: Optional[int]=None, timeframe: Optional[str]='M', format_type: Optional[str]='dollar', ignoreoverrides: Optional[bool]=False):
+    """
+    Print ARR dataframe.
+    """
+    console = Console()
+    con = database.connect_database(console)
+    start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+    end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+    df = calc.customer_arr_df(start_date, end_date, con, timeframe)
+    df_title = display.generate_title("Period End ARR by Customer", start_date, end_date, timeframe, format_type, customer, contract)
+    display.print_combined_table(df, df_title, console, format_type) 
+
+    
 # @calc_app.command("revtbl")
 # def revdf(
 #         start_date: str,
@@ -364,8 +374,8 @@ def arrtbl(date: str,
 #     df = calc.customer_carr_df(date, engine, ignore_zeros, tree_detail)
 #     display.print_combined_table(df, f'CARR at {date}', console)
 
-@calc_app.command("arrtf")
-def arrtfdf(date: str, timeframe: Optional[str]='M'):
+@calc_app.command("arrnew")
+def arrnewtf(date: str, timeframe: Optional[str]='M'):
     """
     Print New ARR table for month or quarter.
     """

@@ -19,7 +19,7 @@ def print_customers(con, console=None):
     if console is None:
         console = Console()
         
-    # Initialize the Table
+ https://setuptools.pypa.io/en/latest/userguide/development_mode.htmo   # Initialize the Table
     table = Table(title="Customers")
     
     # Add columns
@@ -264,8 +264,7 @@ def print_invoices(con, console=None, sort_column=None):
     
 # Dataframe display functions   
 
-def print_combined_table(df, title, console: Console, transpose=False, lh_column_title='Customer'):
-    # Check for empty DataFrame
+def print_combined_table(df, title, console: Console, format_type='dollar', transpose=False, lh_column_title='Customer'):
     if df.empty:
         console.print(f"No data available for: {title}")
         return False
@@ -273,86 +272,51 @@ def print_combined_table(df, title, console: Console, transpose=False, lh_column
     table = Table(title=title, show_header=True, show_lines=True)
 
     if transpose:
-        # Transpose the DataFrame
         df = df.transpose()
 
-        # Add the left-hand column with row titles (originally column names)
-        table.add_column(lh_column_title, justify="right")
+    # Add the left-hand column
+    table.add_column(lh_column_title, justify="right")
 
-        # Handle datetime index specifically
-        if isinstance(df.columns[0], (pd.Timestamp, pd.DatetimeIndex)):
-            formatted_dates = [date.strftime("%b-%Y") for date in df.columns]
-            for formatted_date in formatted_dates:
-                table.add_column(formatted_date, justify="right")
-        else:
-            for column in df.columns:
-                table.add_column(str(column), justify="right")
-    else:
-        # Handle datetime index for rows
-        if isinstance(df.index[0], (pd.Timestamp, pd.DatetimeIndex)):
-            formatted_dates = [date.strftime("%b-%Y") for date in df.index]
-            table.add_column("Date", justify="right")
-        elif not isinstance(df.index[0], (int, np.integer)):
-            table.add_column(df.index.name or "Index", justify="right")
-
-        for column in df.columns:
-            table.add_column(column, justify="right")
+    # Add the remaining columns
+    for column in df.columns:
+        table.add_column(column, justify="right")
 
     # Add rows to the table
     for index, row in df.iterrows():
-        formatted_values = []
-        for value in row.values:
-            if isinstance(value, float):
-                # Convert float to int to ignore digits after decimal point
-                formatted_value = '{:,}'.format(int(value)) if not pd.isna(value) else str(0)
-            elif isinstance(value, int):
-                # Format integer types with commas
-                formatted_value = '{:,}'.format(value)
-            else:
-                # Use the string representation for other types
-                formatted_value = str(value)
-            formatted_values.append(formatted_value)
-        
-        if transpose:
-            table.add_row(str(index), *formatted_values)
-        elif isinstance(df.index[0], (pd.Timestamp, pd.DatetimeIndex)):
-            table.add_row(index.strftime("%b-%Y"), *formatted_values)
-        elif not isinstance(df.index[0], (int, np.integer)):
-            table.add_row(str(index), *formatted_values)
-        else:
-            table.add_row(*formatted_values)
+        row_data = [str(index)] + [format_value(value, format_type) for value in row.values]
+        table.add_row(*row_data)
 
     console.print(table)
     return True
 
 
-def print_dataframe(df, title, console: Console, lh_column_title='Customer'):
-    # Transpose DataFrame so the column names become the row index
-    transposed_df = df.transpose()
+# def print_dataframe(df, title, console: Console, lh_column_title='Customer'):
+#     # Transpose DataFrame so the column names become the row index
+#     transposed_df = df.transpose()
 
-    table = Table(title=title, show_header=True, show_lines=True)
+#     table = Table(title=title, show_header=True, show_lines=True)
     
-    # Add the left hand column for row titles, the title of which depends on the source dataframe content
-    table.add_column(lh_column_title, justify="right")
+#     # Add the left hand column for row titles, the title of which depends on the source dataframe content
+#     table.add_column(lh_column_title, justify="right")
     
-    # Convert datetime index to formatted strings and add as columns
-    if isinstance(df.index[0], (pd.Timestamp, pd.DatetimeIndex)):
-        formatted_dates = [date.strftime("%b-%Y") for date in df.index]
-    else:
-        formatted_dates = [str(date) for date in df.index]
+#     # Convert datetime index to formatted strings and add as columns
+#     if isinstance(df.index[0], (pd.Timestamp, pd.DatetimeIndex)):
+#         formatted_dates = [date.strftime("%b-%Y") for date in df.index]
+#     else:
+#         formatted_dates = [str(date) for date in df.index]
         
-    for formatted_date in formatted_dates:
-        table.add_column(formatted_date, justify="right")
+#     for formatted_date in formatted_dates:
+#         table.add_column(formatted_date, justify="right")
     
-    # Add rows to the table
-    for column, row in transposed_df.iterrows():
-        values = row.values
-        formatted_values = ['{:,}'.format(int(value)) if isinstance(value, (int, float)) else value for value in values]
-        #formatted_values = [str(int(value)) for value in values]
-        table.add_row(column, *formatted_values)
+#     # Add rows to the table
+#     for column, row in transposed_df.iterrows():
+#         values = row.values
+#         formatted_values = ['{:,}'.format(int(value)) if isinstance(value, (int, float)) else value for value in values]
+#         #formatted_values = [str(int(value)) for value in values]
+#         table.add_row(column, *formatted_values)
     
-    console.print(table)
-    return True
+#     console.print(table)
+#     return True
 
 
 def print_contract_details(con, contract_id, console=None):
@@ -442,3 +406,33 @@ def print_contracts_without_segments(con, console=None):
     return
 
 
+# Helper functions
+
+def generate_title(base_title, start_date, end_date, timeframe, format_type, customer=None, contract=None):
+    title = f'{base_title}, {start_date.strftime("%b %d, %Y")} to {end_date.strftime("%b %d, %Y")}, Frequency: {timeframe}'
+
+    # Append unit indication based on format_type
+    if format_type == 'thousand':
+        title += ' ($k)'  # or ' (000s)' based on your preference
+
+    if customer:
+        title += f', Customer: {customer}'
+    if contract:
+        title += f', Contract: {contract}'
+    return title
+
+
+def format_value(value, format_type='dollar'):
+    if pd.isna(value):
+        return '0'
+    elif isinstance(value, (int, float)):
+        if format_type == 'dollar':
+            return '{:,.0f}'.format(value)  # Rounded to the nearest dollar
+        elif format_type == 'cent':
+            return '{:,.2f}'.format(value)  # Rounded to cents
+        elif format_type == 'thousand':
+            return '{:,.0f}'.format(value / 1000)  # Divide by 1000 and round to the nearest
+        else:
+            raise ValueError("Invalid format type. Choose 'dollar', 'cent', or 'thousand'.")
+    else:
+        return str(value)

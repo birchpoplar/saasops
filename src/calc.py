@@ -45,6 +45,49 @@ def customer_arr_tbl(date, con, ignore_zeros=False, tree_detail=False):
     return df
 
 
+def customer_arr_df(start_date, end_date, con, timeframe='M', ignore_zeros=True):  
+    final_df = pd.DataFrame()
+
+    current_date = start_date
+    while current_date <= end_date:
+        period_start, period_end = calculate_timeframe(current_date, timeframe)
+        period_end_str = period_end.strftime('%Y-%m-%d')
+
+        # Build temp table in database of ARR data
+        build_arr_table(con)
+
+        # Query to sum ARR per customer for the period
+        query = f"""
+        SELECT cu.Name AS CustomerName, SUM(a.ARR) AS TotalARR
+        FROM ARRTable a
+        JOIN Segments s ON a.SegmentID = s.SegmentID
+        JOIN Contracts c ON s.ContractID = c.ContractID
+        JOIN Customers cu ON c.CustomerID = cu.CustomerID
+        WHERE a.ARRStartDate <= '{period_end_str}' AND a.ARREndDate >= '{period_end_str}'
+        GROUP BY cu.Name;
+        """
+
+        cursor = con.execute(query)
+        df = cursor.fetchdf()
+        df.set_index('CustomerName', inplace=True)
+
+        delete_arr_table(con)
+
+        if ignore_zeros:
+            df = df[df['TotalARR'] != 0]
+
+        # Format column name based on the timeframe
+        column_name = format_column_name(period_end, timeframe)
+        df.rename(columns={'TotalARR': column_name}, inplace=True)
+
+        final_df = final_df.join(df, how='outer')
+
+        current_date = (period_end + pd.Timedelta(days=1)).date()
+    
+    final_df.fillna(0, inplace=True)  # Replace NaN with 0
+    return final_df
+
+
 def new_arr_by_timeframe(date, con, timeframe="M", ignore_zeros=False):
 
     start_date, end_date = calculate_timeframe(date, timeframe)
@@ -214,63 +257,58 @@ def customer_bkings_df(start_date, end_date, con, timeframe='M', ignore_zeros=Tr
     while current_date <= end_date:
         # Calculate the start and end dates for the current period
         period_start, period_end = calculate_timeframe(current_date, timeframe)
+
+        # Format period_start and period_end as date strings without time components
+        # This is necessary for the SQL query with the DuckDB database
+        period_start_str = period_start.strftime('%Y-%m-%d')
+        period_end_str = period_end.strftime('%Y-%m-%d')
         
         # Query to get data for the current period
         query = f"""
         SELECT cu.Name AS CustomerName, SUM(c.TotalValue) AS TotalNewBookings
         FROM Contracts c
         JOIN Customers cu ON c.CustomerID = cu.CustomerID
-        WHERE c.ContractDate BETWEEN '{period_start}' AND '{period_end}'
+        WHERE c.ContractDate BETWEEN '{period_start_str}' AND '{period_end_str}'
         GROUP BY cu.Name;
         """
 
         cursor = con.execute(query)
         df = cursor.fetchdf()
         df.set_index('CustomerName', inplace=True)
+
+        print(period_start, period_end)
+        print(df)
         
         if ignore_zeros:
             df = df[df['TotalNewBookings'] != 0]
 
-        # Add the results to the final DataFrame
-        final_df = final_df.join(df, rsuffix=f'_{period_start}', how='outer')
+        # Format column name based on the timeframe
+        column_name = format_column_name(period_start, timeframe)
+        df.rename(columns={'TotalNewBookings': column_name}, inplace=True)
 
-        # Move to the next period
+        final_df = final_df.join(df, how='outer')
+
         current_date = (period_end + pd.Timedelta(days=1)).date()
         
     final_df.fillna(0, inplace=True)  # Replace NaN with 0
-    print(final_df)
+
     return final_df
 
 
-# Date helper functions
+# Date & text helper functions
 
 def calculate_timeframe(date, timeframe):
-    """
-    Calculate the start and end dates for a given date and timeframe (month or quarter).
-
-    Args:
-        date (str): The date for which to calculate the timeframe.
-        timeframe (str): Either 'M' for month or 'Q' for quarter.
-
-    Returns:
-        tuple: A tuple containing the start_date and end_date for the specified timeframe.
-    """
-
     date_datetime = pd.Timestamp(date)
 
     if timeframe == 'M':
         start_date = date_datetime.replace(day=1)
-        end_date = start_date + pd.offsets.MonthEnd(0)
+        end_date = start_date + pd.offsets.MonthEnd(1)
     elif timeframe == 'Q':
-        quarter_mapping = {
-            1: (1, 3, 31),
-            2: (4, 6, 30),
-            3: (7, 9, 30),
-            4: (10, 12, 31)
-        }
+        quarter_mapping = {1: (1, 3), 2: (4, 6), 3: (7, 9), 4: (10, 12)}
         q = (date_datetime.month - 1) // 3 + 1
-        start_month, end_month, end_day = quarter_mapping[q]
-        start_date, end_date = date_datetime.replace(month=start_month, day=1), date_datetime.replace(month=end_month, day=end_day)
+        start_month, end_month = quarter_mapping[q]
+        start_date = date_datetime.replace(month=start_month, day=1)
+        end_date = date_datetime.replace(month=end_month).replace(day=1) + pd.offsets.MonthEnd(1)
     else:
         raise ValueError("Invalid timeframe. It should be either 'M' for month or 'Q' for quarter")
 
@@ -298,3 +336,15 @@ def get_timeframe_title(date, timeframe):
         return f"Q{quarter} {date_obj.year}"
     else:
         raise ValueError("Invalid timeframe. It should be either 'M' or 'Q'")
+
+
+def format_column_name(period_start, timeframe):
+    if timeframe == 'M':
+        # Monthly: Format as "Jan 2024", "Feb 2024", etc.
+        return period_start.strftime("%b %Y")
+    elif timeframe == 'Q':
+        # Quarterly: Format as "Q1 2024", "Q2 2024", etc.
+        quarter = (period_start.month - 1) // 3 + 1
+        return f"Q{quarter} {period_start.year}"
+    else:
+        raise ValueError("Invalid timeframe. Use 'M' for monthly or 'Q' for quarterly.")

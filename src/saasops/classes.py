@@ -1,5 +1,7 @@
 from enum import Enum
+import pandas as pd
 import datetime
+
 
 class MessageStyle(Enum):
     INFO = "blue"
@@ -139,57 +141,85 @@ class SegmentData:
         self.type = type
         self.segment_value = segment_value
 
-        
+
 class ARRMetricsCalculator:
-    def __init__(self, contracts, start_period, end_period):
-        self.contracts = contracts
+    def __init__(self, arr_table, start_period, end_period):
+        self.arr_table = arr_table
         self.start_period = start_period
         self.end_period = end_period
-        self.metrics = {
-            'New': 0,
-            'Expansion': 0,
-            'Contraction': 0,
-            'Churn': 0
-        }
+        self.metrics = {'New': 0, 'Expansion': 0, 'Contraction': 0, 'Churn': 0}
 
     def calculate_arr_changes(self):
-        for contract in self.contracts:
-            if self.is_new_contract(contract):
-                self.metrics['New'] += contract.total_value
-            elif self.is_contract_ending(contract):
-                if self.is_renewal_contract(contract):
-                    change = self.calculate_renewal_change(contract)
-                    if change > 0:
-                        self.metrics['Expansion'] += change
-                    else:
-                        self.metrics['Contraction'] += abs(change)
+        # Filter data for the current period
+        df = self.arr_table.data
+        period_data = df[(df['ARRStartDate'] <= self.end_period) & (df['ARREndDate'] >= self.start_period)]
+
+        # Calculate ARR changes
+        for _, row in period_data.iterrows():
+            contract_id, total_arr, min_start_date = row['ContractID'], row['ARR'], row['ARRStartDate']
+
+            if self.is_new_contract(min_start_date):
+                self.metrics['New'] += total_arr
+            elif self.is_contract_ending(contract_id):
+                change = self.calculate_contract_change(contract_id, total_arr)
+                if change > 0:
+                    self.metrics['Expansion'] += change
+                elif change < 0:
+                    self.metrics['Contraction'] += abs(change)
                 else:
-                    self.metrics['Churn'] += contract.total_value
+                    self.metrics['Churn'] += total_arr
 
-    def is_new_contract(self, contract):
-        return self.start_period <= contract.term_start_date <= self.end_period and contract.renewal_from_contract_id is None
+    def is_new_contract(self, start_date):
+        return start_date >= self.start_period
 
-    def is_contract_ending(self, contract):
-        return self.start_period <= contract.term_end_date <= self.end_period
+    def is_contract_ending(self, contract_id):
+        # Check if the contract is ending within the period
+        df = self.arr_table.data
+        return any((df['ContractID'] == contract_id) & (df['ARREndDate'] <= self.end_period))
 
-    def is_renewal_contract(self, contract):
-        # Logic to determine if a contract is a renewal
-        # You might need to access previous contracts to check this
-        return contract.renewal_from_contract_id is not None
+    def calculate_contract_change(self, contract_id, current_total_arr):
+        # Get the previous ARR value for comparison
+        df = self.arr_table.data
+        prev_period_data = df[(df['ContractID'] == contract_id) & (df['ARRStartDate'] < self.start_period)]
+        previous_arr = prev_period_data['ARR'].sum() if not prev_period_data.empty else 0
+        return current_total_arr - previous_arr
 
-    def calculate_renewal_change(self, contract):
-        # Logic to compare the ARR of the current contract with its previous version
-        # You'll need to fetch the previous contract using `contract.renewal_from_contract_id`
-        # and compare its `total_value` with the current contract's `total_value`
-        previous_contract = self.get_previous_contract(contract)
-        if previous_contract:
-            return contract.total_value - previous_contract.total_value
-        return 0
+    def reset_metrics(self):
+        self.metrics = {key: 0 for key in self.metrics}
 
-    def get_previous_contract(self, contract):
-        # Logic to retrieve the previous contract
-        # This might involve searching your contract list or database
-        for prev_contract in self.contracts:
-            if prev_contract.contract_id == contract.renewal_from_contract_id:
-                return prev_contract
-        return None
+class ARRTable:
+    def __init__(self):
+        columns = ['SegmentID', 'ContractID', 'RenewalFromContractID', 'ARRStartDate', 'ARREndDate', 'ARR']
+        self.data = pd.DataFrame()
+
+    def add_row(self, segment_data, context):
+        new_row = pd.DataFrame([{
+            "SegmentID": segment_data.segment_id, 
+            "ContractID": segment_data.contract_id,
+            "RenewalFromContractID": segment_data.renewal_from_contract_id,
+            "CustomerName": segment_data.customer_name,
+            "ARRStartDate": pd.to_datetime(context.arr_start_date),
+            "ARREndDate": pd.to_datetime(context.arr_end_date),
+            "ARR": context.arr
+        }])
+        self.data = pd.concat([self.data, new_row], ignore_index=True)        
+
+    def update_renewed_segment_arr_end_date(self, segment_id, new_arr_end_date):
+        self.data.loc[self.data['SegmentID'] == segment_id, 'ARREndDate'] = pd.to_datetime(new_arr_end_date)
+        
+    def update_for_renewal_contracts(self):
+        # Iterate over each row in the DataFrame
+        for index, row in self.data.iterrows():
+            if row['RenewalFromContractID']:
+                renewing_segment_id = row['SegmentID']
+                # Find the corresponding row for the renewal
+                renewing_rows = self.data[self.data['SegmentID'] == renewing_segment_id]
+                if not renewing_rows.empty:
+                    renewing_arr_start_date = renewing_rows.iloc[0]['ARRStartDate']
+                    # Find the corresponding renewed contract's end date
+                    renewed_rows = self.data[self.data['ContractID'] == row['RenewalFromContractID']]
+                    if not renewed_rows.empty:
+                        renewed_arr_end_date = renewed_rows.iloc[0]['ARREndDate']
+                        if (renewing_arr_start_date - renewed_arr_end_date).days > 1:
+                            new_arr_end_date = renewing_arr_start_date - pd.Timedelta(days=1)
+                            self.data.loc[index, 'ARREndDate'] = new_arr_end_date

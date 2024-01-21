@@ -1,5 +1,5 @@
 import saasops.utils as utils
-from saasops.classes import MessageStyle, SegmentData, SegmentContext
+from saasops.classes import MessageStyle, SegmentData, SegmentContext, ARRStartDateDecisionTable, ARRMetricsCalculator, ARRTable
 from sqlalchemy import text
 from rich.console import Console, Group
 from rich.table import Table
@@ -16,31 +16,29 @@ import numpy as np
 # ARR Calculation Functions
 
 def customer_arr_tbl(date, con, ignore_zeros=False, tree_detail=False):
+    # Convert the date to a pandas Timestamp
+    date_as_timestamp = pd.to_datetime(date)
 
-    # Build temp table in database of ARR data
-    build_arr_table(con)
+    # Build the ARR table instance (which now uses a DataFrame)
+    arr_table = build_arr_table(con)
 
-    # Query to sum ARR per customer and filter by date
-    query = f"""
-    SELECT cu.Name AS CustomerName, SUM(a.ARR) AS TotalARR
-    FROM ARRTable a
-    JOIN Segments s ON a.SegmentID = s.SegmentID
-    JOIN Contracts c ON s.ContractID = c.ContractID
-    JOIN Customers cu ON c.CustomerID = cu.CustomerID
-    WHERE a.ARRStartDate <= '{date}' AND a.ARREndDate >= '{date}'
-    GROUP BY cu.Name;
-    """
-
-    cursor = con.execute(query)
-    df = cursor.fetchdf()
-
+    # print(f"ARR Table: {arr_table.data.shape[0]} rows")
+    # print(f"ARR Table Columns: {arr_table.data.columns}")
+    # print(f"ARR Table Data Types: {arr_table.data.dtypes}")
+    # print(f"ARR Table Data: {arr_table.data}")
+    
+    active_segments = arr_table.data[(arr_table.data['ARRStartDate'] <= date_as_timestamp) & (arr_table.data['ARREndDate'] >= date_as_timestamp)]
+    has_renewal = active_segments['ContractID'].isin(active_segments['RenewalFromContractID'].dropna())
+    active_segments = active_segments[~has_renewal]
+ 
+    # Sum ARR per customer
+    df = active_segments.groupby('CustomerName')['ARR'].sum().reset_index()
+    df.rename(columns={'ARR': 'TotalARR'}, inplace=True)
     df.set_index('CustomerName', inplace=True)
 
     if ignore_zeros:
         df = df[df['TotalARR'] != 0]
-    
-    delete_arr_table(con)
-    
+
     return df
 
 
@@ -50,37 +48,43 @@ def customer_arr_df(start_date, end_date, con, timeframe='M', ignore_zeros=True)
     current_date = start_date
     while current_date <= end_date:
         period_start, period_end = calculate_timeframe(current_date, timeframe)
-        period_end_str = period_end.strftime('%Y-%m-%d')
+        period_end_timestamp = pd.to_datetime(period_end.strftime('%Y-%m-%d'))
 
         # Build temp table in database of ARR data
-        build_arr_table(con)
+        arr_table = build_arr_table(con)
 
-        # Query to sum ARR per customer for the period
-        query = f"""
-        SELECT cu.Name AS CustomerName, SUM(a.ARR) AS TotalARR
-        FROM ARRTable a
-        JOIN Segments s ON a.SegmentID = s.SegmentID
-        JOIN Contracts c ON s.ContractID = c.ContractID
-        JOIN Customers cu ON c.CustomerID = cu.CustomerID
-        WHERE a.ARRStartDate <= '{period_end_str}' AND a.ARREndDate >= '{period_end_str}'
-        GROUP BY cu.Name;
-        """
+        # print(f"ARR Table: {arr_table.data.shape[0]} rows")
+        # print(f"ARR Table Data: {arr_table.data}")
+        
+        # Filter active segments for the period
+        active_segments = arr_table.data[
+            (arr_table.data['ARRStartDate'] <= period_end_timestamp) &
+            (arr_table.data['ARREndDate'] >= period_end_timestamp)
+        ]
+        has_renewal = active_segments['ContractID'].isin(active_segments['RenewalFromContractID'].dropna())
+        active_segments = active_segments[~has_renewal]
 
-        cursor = con.execute(query)
-        df = cursor.fetchdf()
+        # print("Period Start:", period_start)
+        # print("Period End:", period_end)
+        # print(active_segments)
+        
+        # Sum ARR per customer for the period
+        df = active_segments.groupby('CustomerName')['ARR'].sum().reset_index()
         df.set_index('CustomerName', inplace=True)
-
-        delete_arr_table(con)
-
+        
         if ignore_zeros:
-            df = df[df['TotalARR'] != 0]
+            df = df[df['ARR'] != 0]
 
         # Format column name based on the timeframe
         column_name = format_column_name(period_end, timeframe)
-        df.rename(columns={'TotalARR': column_name}, inplace=True)
+        df.rename(columns={'ARR': column_name}, inplace=True)
 
-        final_df = final_df.join(df, how='outer')
-
+        # Join the dataframes
+        if final_df.empty:
+            final_df = df
+        else:
+            final_df = final_df.join(df, how='outer')
+        
         current_date = (period_end + pd.Timedelta(days=1)).date()
     
     final_df.fillna(0, inplace=True)  # Replace NaN with 0
@@ -88,127 +92,88 @@ def customer_arr_df(start_date, end_date, con, timeframe='M', ignore_zeros=True)
 
 
 def new_arr_by_timeframe(date, con, timeframe="M", ignore_zeros=False):
-
     start_date, end_date = calculate_timeframe(date, timeframe)
+    start_timestamp = pd.to_datetime(start_date)
+    end_timestamp = pd.to_datetime(end_date)
 
-    # Build temp table in database of ARR data
-    build_arr_table(con)
+    # Build the ARR table instance (which now uses a DataFrame)
+    arr_table = build_arr_table(con)
 
-    # Query to sum ARR per customer for segments where ARR start date is between start_date and end_date
-    query = f"""
-    SELECT cu.Name AS CustomerName, SUM(a.ARR) AS TotalNewARR
-    FROM ARRTable a
-    JOIN Segments s ON a.SegmentID = s.SegmentID
-    JOIN Contracts c ON s.ContractID = c.ContractID
-    JOIN Customers cu ON c.CustomerID = cu.CustomerID
-    WHERE a.ARRStartDate BETWEEN '{start_date}' AND '{end_date}'
-    GROUP BY cu.Name;
-    """
+    # Filter for segments with ARR start date within the specified period
+    new_segments = arr_table.data[
+        (arr_table.data['ARRStartDate'] >= start_timestamp) & 
+        (arr_table.data['ARRStartDate'] <= end_timestamp)
+    ]
 
-    cursor = con.execute(query)
-    df = cursor.fetchdf()
+    # Exclude segments that are renewals
+    new_segments = new_segments[new_segments['RenewalFromContractID'].isna()]
 
+    # Sum new ARR per customer
+    df = new_segments.groupby('CustomerName')['ARR'].sum().reset_index()
+    df.rename(columns={'ARR': 'TotalNewARR'}, inplace=True)
     df.set_index('CustomerName', inplace=True)
 
     if ignore_zeros:
         df = df[df['TotalNewARR'] != 0]
+
+    return df
+
+
+def build_arr_change_df(start_date, end_date, con, freq='M'):
+    arr_table = build_arr_table(con)
     
-    delete_arr_table(con)
+    periods = generate_periods(start_date, end_date, freq)
+    columns = [f"{start.strftime('%Y-%m-%d')} to {end.strftime('%Y-%m-%d')}" for start, end in periods]
+    df = pd.DataFrame(index=["Beginning ARR", "New", "Expansion", "Contraction", "Churn", "Ending ARR"], columns=columns)
+
+    previous_ending_arr = 0
+    for i, (start, end) in enumerate(periods):
+        arr_calculator = ARRMetricsCalculator(arr_table, start, end)
+
+        beginning_arr = previous_ending_arr if i > 0 else 0
+
+        arr_calculator.calculate_arr_changes()
+
+        calculated_ending_arr = beginning_arr + sum(arr_calculator.metrics.values())
+        
+        # Populate the DataFrame for each period
+        df.at['Beginning ARR', columns[i]] = beginning_arr
+        df.at['New', columns[i]] = arr_calculator.metrics['New']
+        df.at['Expansion', columns[i]] = arr_calculator.metrics['Expansion']
+        df.at['Contraction', columns[i]] = arr_calculator.metrics['Contraction']
+        df.at['Churn', columns[i]] = arr_calculator.metrics['Churn']
+        df.at['Ending ARR', columns[i]] = calculated_ending_arr
+
+        previous_ending_arr = calculated_ending_arr
+        arr_calculator.reset_metrics()
 
     return df
 
 
 def build_arr_table(con):
-    """
-    Build the ARR table in the database.
-    """
-
+    # Retrieve segment data from the database
     query = """
-    SELECT s.SegmentID, s.ContractID, c.RenewalFromContractID, cu.Name, c.ContractDate, s.SegmentStartDate, s.SegmentEndDate, s.ARROverrideStartDate, s.Title, s.Type, s.SegmentValue
+    SELECT s.SegmentID, s.ContractID, c.RenewalFromContractID, cu.Name, c.ContractDate, 
+           s.SegmentStartDate, s.SegmentEndDate, s.ARROverrideStartDate, 
+           s.Title, s.Type, s.SegmentValue
     FROM Segments s
     JOIN Contracts c ON s.ContractID = c.ContractID
     JOIN Customers cu ON c.CustomerID = cu.CustomerID;
     """
-
     result = con.execute(query)
     rows = result.fetchall()
-    column_names = [desc[0] for desc in result.description]
 
-    segment_data_list = []
+    arr_table = ARRTable()
+
     for row in rows:
         segment_data = SegmentData(*row)
-        segment_data_list.append(segment_data)
-
-    # Create ARR Table
-    create_table_query = """
-    CREATE TABLE IF NOT EXISTS ARRTable (
-    SegmentID INT,
-    ContractID INT,
-    RenewalFromContractID INT,
-    ARRStartDate DATE,
-    ARREndDate DATE,
-    ARR FLOAT
-    );
-    """
-    con.execute(create_table_query)
-
-    # Insert data into ARR Table
-    for segment_data in segment_data_list:
         context = SegmentContext(segment_data)
         context.calculate_arr()
+        arr_table.add_row(segment_data, context)
 
-        renewal_from_contract_id_value = segment_data.renewal_from_contract_id if segment_data.renewal_from_contract_id else "NULL"
+    arr_table.update_for_renewal_contracts()
         
-        insert_query = f"""
-        INSERT INTO ARRTable (SegmentID, ContractID, RenewalFromContractID, ARRStartDate, ARREndDate, ARR)
-        VALUES ({segment_data.segment_id}, {segment_data.contract_id}, {renewal_from_contract_id_value}, '{context.arr_start_date}', '{context.arr_end_date}', {context.arr});
-        """
-        con.execute(insert_query)
-
-    # Second pass to update the ARREndDate for renewed contracts
-    for segment_data in segment_data_list:
-        if segment_data.renewal_from_contract_id:
-            # Retrieve the renewing segment's ARR start date from the ARRTable
-            renewing_arr_start_query = f"""
-            SELECT ARRStartDate
-            FROM ARRTable
-            WHERE SegmentID = {segment_data.segment_id};
-            """
-            renewing_result = con.execute(renewing_arr_start_query)
-            renewing_arr_start_date = renewing_result.fetchone()
-            
-            if renewing_arr_start_date:
-                # Retrieve the renewed segment's ARR end date from the ARRTable
-                # We are using the renewal_from_contract_id to find the linked segment's ARR end date
-                renewed_segment_arr_end_query = f"""
-                SELECT ARREndDate
-                FROM ARRTable
-                INNER JOIN Segments ON ARRTable.SegmentID = Segments.SegmentID
-                WHERE Segments.ContractID = {segment_data.renewal_from_contract_id};
-                """
-                renewed_segment_result = con.execute(renewed_segment_arr_end_query)
-                renewed_arr_end_date = renewed_segment_result.fetchone()
-                
-                if renewed_arr_end_date and (renewing_arr_start_date[0] - renewed_arr_end_date[0]).days > 1:
-                    # Calculate the new ARREndDate for the renewed contract's segment
-                    new_arr_end_date = renewing_arr_start_date[0] - timedelta(days=1)
-                    # Prepare the update query to adjust the ARREndDate in the ARRTable for the renewed contract's segment
-                    update_renewed_segment_query = f"""
-                    UPDATE ARRTable
-                    SET ARREndDate = '{new_arr_end_date}'
-                    WHERE SegmentID = (
-                    SELECT SegmentID
-                    FROM Segments
-                    WHERE ContractID = {segment_data.renewal_from_contract_id}
-                    );
-                    """
-                    con.execute(update_renewed_segment_query)
-                    
-    print("ARRTable updated with renewed contracts.")
-
-    print(con.execute("SELECT * FROM ARRTable;").fetchdf())
-
-    return
+    return arr_table
 
 
 def delete_arr_table(con):
@@ -314,28 +279,35 @@ def calculate_timeframe(date, timeframe):
     return start_date, end_date
 
 
-def get_timeframe_title(date, timeframe):
+def get_timeframe_title(date_input, timeframe):
     """
-    Generate a title string for the table based on the given date and timeframe.
+    Generates a title for the table based on the date and timeframe.
 
     Args:
-        date (str): The date in the format 'YYYY-MM-DD'.
-        timeframe (str): Either 'M' for month or 'Q' for quarter.
+        date_input (str or date): The date for which to generate the title.
+        timeframe (str): The timeframe ('M' for month, 'Q' for quarter, etc.).
 
     Returns:
         str: A string representing the title for the table.
     """
+    # Check if date_input is a string and convert to date if necessary
+    if isinstance(date_input, str):
+        date_obj = datetime.strptime(date_input, '%Y-%m-%d').date()
+    elif isinstance(date_input, date):  # Corrected usage of date type
+        date_obj = date_input
+    else:
+        raise ValueError("Date must be a string or a datetime.date object")
 
-    date_obj = datetime.strptime(date, '%Y-%m-%d').date()
-
+    # Format the date based on the timeframe
     if timeframe == 'M':
         return date_obj.strftime('%B %Y')  # e.g., "January 2023"
     elif timeframe == 'Q':
         quarter = (date_obj.month - 1) // 3 + 1
         return f"Q{quarter} {date_obj.year}"
     else:
-        raise ValueError("Invalid timeframe. It should be either 'M' or 'Q'")
-
+        # Handle other timeframe formats or raise an error for unsupported ones
+        raise ValueError("Unsupported timeframe specified")\
+    
 
 def format_column_name(period_start, timeframe):
     if timeframe == 'M':
@@ -347,3 +319,11 @@ def format_column_name(period_start, timeframe):
         return f"Q{quarter} {period_start.year}"
     else:
         raise ValueError("Invalid timeframe. Use 'M' for monthly or 'Q' for quarterly.")
+
+
+def generate_periods(start_date, end_date, freq='M'):
+    """
+    Generate periods between start_date and end_date with given frequency ('M' for months, 'Q' for quarters).
+    """
+    periods = pd.date_range(start=start_date, end=end_date, freq=freq)
+    return [(start, start + timedelta(days=(end - start).days)) for start, end in zip(periods, periods[1:])]

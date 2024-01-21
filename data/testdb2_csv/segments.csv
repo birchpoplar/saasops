@@ -1,0 +1,4 @@
+SegmentID,ContractID,SegmentStartDate,SegmentEndDate,ARROverrideStartDate,ARROverrideNote,Title,Type,SegmentValue
+4,4,2022-06-01,2023-05-28,,,Platform,Subscription,240000
+5,5,2023-06-01,2024-05-30,,,Platform,Subscription,240000
+6,6,2024-06-01,2023-05-28,,,Platform,Subscription,280000

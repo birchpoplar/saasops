@@ -110,6 +110,59 @@ def print_segments(con, console=None, sort_column=None):
     console.print(table)
 
 
+def print_contracts(con, console=None, sort_column=None):
+    
+    # If no console object is provided, create a new one
+    if console is None:
+        console = Console()
+    
+    # Initialize the Table
+    table = Table(title=f"Contracts for all Customers")
+    
+    # Add columns
+    table.add_column("Contract ID", justify="right")
+    table.add_column("Customer ID", justify="right")
+    table.add_column("Renewal ID", justify="right")
+    table.add_column("Reference", justify="left")
+    table.add_column("Contract Date", justify="right")
+    table.add_column("Term Start Date", justify="right")
+    table.add_column("Term End Date", justify="right")
+    table.add_column("Total Value", justify="right")
+
+    # Execute the SQL query to fetch data
+    result = con.execute("SELECT * FROM Contracts;")
+
+    # Fetch all rows
+    rows = result.fetchall()
+
+    # Get column names
+    column_names = [desc[0] for desc in result.description]
+
+    # Create a dataframe from the rows
+    df = pd.DataFrame(rows, columns=column_names)
+
+    # Sort the dataframe by the specified column
+    if sort_column is not None and sort_column in df.columns:
+        df = df.sort_values(by=sort_column)
+
+    # Add rows to the Rich table
+    for row in df.itertuples(index=False):
+        renewal_id = 'N/A' if pd.isna(row[column_names.index('RenewalFromContractID')]) else str(int(row[column_names.index('RenewalFromContractID')]))
+        table.add_row(
+            str(row[column_names.index('ContractID')]), 
+            str(row[column_names.index('CustomerID')]),
+            renewal_id,
+            row[column_names.index('Reference')], 
+            str(row[column_names.index('ContractDate')]), 
+            str(row[column_names.index('TermStartDate')]), 
+            str(row[column_names.index('TermEndDate')]), 
+            f"{row[column_names.index('TotalValue')]:.2f}"
+        )
+
+    # Print the table to the console
+    console.print(table)
+    
+
 def print_segment(con, segment_id, console=None):
     if console is None:
         console = Console()
@@ -166,53 +219,7 @@ def print_contract(con, contract_id, console=None):
 
     # Print the table to the console
     console.print(table)
-        
-
-def print_contracts(con, console=None, sort_column=None):
-    
-    # If no console object is provided, create a new one
-    if console is None:
-        console = Console()
-    
-    # Initialize the Table
-    table = Table(title=f"Contracts for all Customers")
-    
-    # Add columns
-    table.add_column("Contract ID", justify="right")
-    table.add_column("Customer ID", justify="right")
-    table.add_column("Renewal ID", justify="right")
-    table.add_column("Reference", justify="left")
-    table.add_column("Contract Date", justify="right")
-    table.add_column("Term Start Date", justify="right")
-    table.add_column("Term End Date", justify="right")
-    table.add_column("Total Value", justify="right")
-
-    # Execute the SQL query to fetch data
-    result = con.execute(text("SELECT * FROM Contracts;"))
-    # Convert the result object to a dataframe
-    df = pd.DataFrame(result.fetchall(), columns=result.keys())
-
-    # Sort the dataframe by the specified column
-    if sort_column is not None and sort_column in df.columns:
-        df = df.sort_values(by=sort_column)
-
-    # Add rows to the Rich table
-    for row in df.itertuples(index=False):
-        renewalid = 'N/A' if pd.isna(row.renewalfromcontractid) else str(int(row.renewalfromcontractid))
-        table.add_row(
-            str(row.contractid), 
-            str(row.customerid),
-            renewalid,
-            row.reference, 
-            str(row.contractdate), 
-            str(row.termstartdate), 
-            str(row.termenddate), 
-            f"{row.totalvalue:.2f}"
-        )
-
-    # Print the table to the console
-    console.print(table)
-    
+            
 
 def print_invoices(con, console=None, sort_column=None):
     # If no console object is provided, create a new one

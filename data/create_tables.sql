@@ -50,4 +50,3 @@ CREATE TABLE InvoiceSegments (
     FOREIGN KEY (InvoiceID) REFERENCES Invoices(InvoiceID),
     FOREIGN KEY (SegmentID) REFERENCES Segments(SegmentID)
 );
-

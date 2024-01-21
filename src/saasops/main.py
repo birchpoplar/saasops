@@ -396,6 +396,29 @@ def arrnewtf(date: str, timeframe: Optional[str]='M'):
 
     display.print_combined_table(df, f'New ARR for {title_date_str}', console)
 
+
+@calc_app.command("arrchange")
+def arrchangedf(start_date: str, end_date: str, timeframe: Optional[str]='M'):
+    """
+    Print ARR Change table for month or quarter.
+    """
+
+    console = Console()
+    con = database.connect_database(console)
+
+    # Parse the input start and end dates
+    start_date_parsed = datetime.strptime(start_date, "%Y-%m-%d").date()
+    end_date_parsed = datetime.strptime(end_date, "%Y-%m-%d").date()
+
+    # Calculate the ARR change dataframe
+    df = calc.build_arr_change_df(start_date_parsed, end_date_parsed, con, timeframe)
+
+    # Determine table title based on the provided frequency and the start date
+    title_date_str = calc.get_timeframe_title(start_date_parsed, timeframe)
+
+    display.print_combined_table(df, f'ARR Change for {title_date_str}', console)
+
+     
 # @calc_app.command("arrmetrics")
 # def arrmetricsdf(start_date: str, end_date: str, customer: Optional[int]=None, contract: Optional[int]=None, frequency: Optional[str]='M', ignoreoverrides: Optional[bool]=False):
 #     """

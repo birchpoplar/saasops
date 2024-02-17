@@ -154,35 +154,40 @@ class ARRMetricsCalculator:
         df = self.arr_table.data
         period_data = df[(df['ARRStartDate'] <= self.end_period) & (df['ARREndDate'] >= self.start_period)]
 
-        # Calculate ARR changes
-        for _, row in period_data.iterrows():
-            contract_id, total_arr, min_start_date = row['ContractID'], row['ARR'], row['ARRStartDate']
+        print(f"Calculating ARR changes for {len(period_data)} contracts")
+        print(f"Period start: {self.start_period}, Period end: {self.end_period}")
+        print(period_data[['ContractID', 'ARRStartDate', 'ARREndDate', 'ARR', 'RenewalFromContractID']])
 
-            if self.is_new_contract(min_start_date):
-                self.metrics['New'] += total_arr
-            elif self.is_contract_ending(contract_id):
-                change = self.calculate_contract_change(contract_id, total_arr)
-                if change > 0:
-                    self.metrics['Expansion'] += change
-                elif change < 0:
-                    self.metrics['Contraction'] += abs(change)
-                else:
-                    self.metrics['Churn'] += total_arr
+        # So now we have the list of contracts that were active during the period
+        # In the sequence, the tests are:
+        # If a contract has an ARRStart Date in the period and is not a renewal, it is a new contract
+        # If a contract has an ARRStartDate in the period and is a renewal, then:
+        # If the ARR is higher than the previous ARR, it is an expansion
+        # If the ARR is lower than the previous ARR, it is a contraction
+        # If a contract has an ARREndDate in the period, and there is no renewal, it is churn
 
-    def is_new_contract(self, start_date):
-        return start_date >= self.start_period
-
-    def is_contract_ending(self, contract_id):
-        # Check if the contract is ending within the period
-        df = self.arr_table.data
-        return any((df['ContractID'] == contract_id) & (df['ARREndDate'] <= self.end_period))
-
-    def calculate_contract_change(self, contract_id, current_total_arr):
-        # Get the previous ARR value for comparison
-        df = self.arr_table.data
-        prev_period_data = df[(df['ContractID'] == contract_id) & (df['ARRStartDate'] < self.start_period)]
-        previous_arr = prev_period_data['ARR'].sum() if not prev_period_data.empty else 0
-        return current_total_arr - previous_arr
+        for index, row in period_data.iterrows():
+            # First, check if the contract is a new contract
+            if row['ARRStartDate'] >= self.start_period and not row['RenewalFromContractID']:
+                self.metrics['New'] += row['ARR']
+            # If it is a renewal, check if it is an expansion or contraction
+            elif row['ARRStartDate'] >= self.start_period and row['RenewalFromContractID']:
+                renewed_contract_id = row['RenewalFromContractID']
+                renewed_contract = period_data[period_data['ContractID'] == renewed_contract_id]
+                if not renewed_contract.empty:
+                    prior_arr = renewed_contract.iloc[0]['ARR']
+                    if row['ARR'] > prior_arr:
+                        self.metrics['Expansion'] += row['ARR'] - prior_arr
+                    elif row['ARR'] < prior_arr:
+                        self.metrics['Contraction'] += prior_arr - row['ARR']
+            # If it is not a renewal, check if it is churn, which is ARR end date in period
+            # and also if the contract is not renewed, i.e. any other contract references it as RenewalFromContractID - which has to be checked in the entire dataset
+            elif row['ARREndDate'] <= self.end_period:
+                renewed_contract = period_data[period_data['RenewalFromContractID'] == row['ContractID']]
+                if renewed_contract.empty:
+                    self.metrics['Churn'] += row['ARR']
+                
+            
 
     def reset_metrics(self):
         self.metrics = {key: 0 for key in self.metrics}

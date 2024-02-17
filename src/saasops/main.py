@@ -413,10 +413,9 @@ def arrchangedf(start_date: str, end_date: str, timeframe: Optional[str]='M'):
     # Calculate the ARR change dataframe
     df = calc.build_arr_change_df(start_date_parsed, end_date_parsed, con, timeframe)
 
-    # Determine table title based on the provided frequency and the start date
-    title_date_str = calc.get_timeframe_title(start_date_parsed, timeframe)
+    df_title = display.generate_title("ARR Change", start_date_parsed, end_date_parsed, timeframe, None, None, None)
 
-    display.print_combined_table(df, f'ARR Change for {title_date_str}', console)
+    display.print_combined_table(df, df_title, console)
 
      
 # @calc_app.command("arrmetrics")

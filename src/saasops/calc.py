@@ -124,7 +124,8 @@ def build_arr_change_df(start_date, end_date, con, freq='M'):
     arr_table = build_arr_table(con)
     
     periods = generate_periods(start_date, end_date, freq)
-    columns = [f"{start.strftime('%Y-%m-%d')} to {end.strftime('%Y-%m-%d')}" for start, end in periods]
+    # columns = [f"{start.strftime('%Y-%m-%d')} to {end.strftime('%Y-%m-%d')}" for start, end in periods]
+    columns = [format_column_name(start, freq) for start, end in periods]
     df = pd.DataFrame(index=["Beginning ARR", "New", "Expansion", "Contraction", "Churn", "Ending ARR"], columns=columns)
 
     # Calculate previous ending ARR, this will be used as the beginning ARR for the first period

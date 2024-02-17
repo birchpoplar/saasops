@@ -113,20 +113,26 @@ class SegmentContext:
         self.length_variance_alert = False
 
     def calculate_arr(self):
-        arr_start_decision_table = ARRStartDateDecisionTable()
-        arr_calculation_table = ARRCalculationDecisionTable()
+        # Only proceed if segment type is 'Subscription'
+        if self.segment_data.type == 'Subscription':
+            arr_start_decision_table = ARRStartDateDecisionTable()
+            arr_calculation_table = ARRCalculationDecisionTable()
 
-        arr_start_decision_table.add_rule(has_arr_override, set_arr_to_override)
-        arr_start_decision_table.add_rule(booked_before_segment_start, set_arr_to_booked_date)
-        arr_start_decision_table.add_rule(segment_start_before_booked, set_arr_to_segment_start)
+            arr_start_decision_table.add_rule(has_arr_override, set_arr_to_override)
+            arr_start_decision_table.add_rule(booked_before_segment_start, set_arr_to_booked_date)
+            arr_start_decision_table.add_rule(segment_start_before_booked, set_arr_to_segment_start)
 
-        evaluated_date = arr_start_decision_table.evaluate(self)
-        if evaluated_date:
-            self.arr_start_date = evaluated_date
+            evaluated_date = arr_start_decision_table.evaluate(self)
+            if evaluated_date:
+                self.arr_start_date = evaluated_date
 
-        arr_calculation_table.evaluate(self)
+            arr_calculation_table.evaluate(self)
 
-        
+        else:
+            # If not a 'Subscription' type, set ARR to None or 0 as appropriate
+            self.arr = 0  # Or None, depending on how you want to handle non-subscription types
+
+            
 class SegmentData:
     def __init__(self, segment_id, contract_id, renewal_from_contract_id, customer_name, contract_date, segment_start_date, segment_end_date, arr_override_start_date, title, type, segment_value):
         self.segment_id = segment_id
@@ -154,9 +160,9 @@ class ARRMetricsCalculator:
         df = self.arr_table.data
         period_data = df[(df['ARRStartDate'] <= self.end_period) & (df['ARREndDate'] >= self.start_period)]
 
-        print(f"Calculating ARR changes for {len(period_data)} contracts")
-        print(f"Period start: {self.start_period}, Period end: {self.end_period}")
-        print(period_data[['ContractID', 'ARRStartDate', 'ARREndDate', 'ARR', 'RenewalFromContractID']])
+        # print(f"Calculating ARR changes for {len(period_data)} contracts")
+        # print(f"Period start: {self.start_period}, Period end: {self.end_period}")
+        # print(period_data[['ContractID', 'ARRStartDate', 'ARREndDate', 'ARR', 'RenewalFromContractID']])
 
         # So now we have the list of contracts that were active during the period
         # In the sequence, the tests are:

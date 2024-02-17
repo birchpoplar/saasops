@@ -22,21 +22,20 @@ def customer_arr_tbl(date, con, ignore_zeros=False, tree_detail=False):
     # Build the ARR table instance (which now uses a DataFrame)
     arr_table = build_arr_table(con)
 
-    print(f"ARR Table: {arr_table.data.shape[0]} rows")
-    print(f"ARR Table Columns: {arr_table.data.columns}")
-    print(f"ARR Table Data Types: {arr_table.data.dtypes}")
-    print(f"ARR Table Data: {arr_table.data}")
+    # print(f"ARR Table: {arr_table.data.shape[0]} rows")
+    # print(f"ARR Table Columns: {arr_table.data.columns}")
+    # print(f"ARR Table Data Types: {arr_table.data.dtypes}")
+    # print(f"ARR Table Data: {arr_table.data}")
     
     active_segments = arr_table.data[(arr_table.data['ARRStartDate'] <= date_as_timestamp) & (arr_table.data['ARREndDate'] >= date_as_timestamp)]
     has_renewal = active_segments['ContractID'].isin(active_segments['RenewalFromContractID'].dropna())
     active_segments = active_segments[~has_renewal]
-    print(active_segments)
+    # print(active_segments)
 
     # Sum ARR per customer
     df = active_segments.groupby('CustomerName')['ARR'].sum().reset_index()
     df.rename(columns={'ARR': 'TotalARR'}, inplace=True)
     df.set_index('CustomerName', inplace=True)
-    print(df)
 
     if ignore_zeros:
         df = df[df['TotalARR'] != 0]
@@ -55,8 +54,8 @@ def customer_arr_df(start_date, end_date, con, timeframe='M', ignore_zeros=True)
         # Build temp table in database of ARR data
         arr_table = build_arr_table(con)
 
-        print(f"ARR Table: {arr_table.data.shape[0]} rows")
-        print(f"ARR Table Data: {arr_table.data}")
+        # print(f"ARR Table: {arr_table.data.shape[0]} rows")
+        # print(f"ARR Table Data: {arr_table.data}")
         
         # Filter active segments for the period
         active_segments = arr_table.data[
@@ -68,7 +67,7 @@ def customer_arr_df(start_date, end_date, con, timeframe='M', ignore_zeros=True)
 
         # print("Period Start:", period_start)
         # print("Period End:", period_end)
-        print(active_segments)
+        # print(active_segments)
         
         # Sum ARR per customer for the period
         df = active_segments.groupby('CustomerName')['ARR'].sum().reset_index()
@@ -135,7 +134,6 @@ def build_arr_change_df(start_date, end_date, con, freq='M'):
     previous_start, previous_end = periods[0]
     previous_end = previous_start - timedelta(days=1)
     previous_ending_arr = customer_arr_tbl(previous_end, con).sum().values[0]
-    print(previous_ending_arr)
 
     # Set beginning ARR for the first period
     df.at['Beginning ARR', columns[0]] = previous_ending_arr
@@ -184,14 +182,10 @@ def build_arr_table(con):
         segment_data = SegmentData(*row)
         context = SegmentContext(segment_data)
         context.calculate_arr()
-        print("ARR for segment:", context.arr)
         arr_table.add_row(segment_data, context)
 
     arr_table.update_for_renewal_contracts()
 
-    print("ARR Table Data from build_arr_table:")
-    print(arr_table.data)
-        
     return arr_table
 
 
@@ -344,5 +338,15 @@ def generate_periods(start_date, end_date, freq='M'):
     """
     Generate periods between start_date and end_date with given frequency ('M' for months, 'Q' for quarters).
     """
-    periods = pd.date_range(start=start_date, end=end_date, freq=freq)
-    return [(start, start + timedelta(days=(end - start).days)) for start, end in zip(periods, periods[1:])]
+    # Adjust the start date to the first day of the month or quarter
+    if freq == 'M':
+        adjusted_start_date = start_date - pd.offsets.MonthBegin(n=1)
+    elif freq == 'Q':
+        adjusted_start_date = start_date - pd.offsets.QuarterBegin(startingMonth=1, n=1)
+    else:
+        raise ValueError("Frequency must be 'M' for months or 'Q' for quarters.")
+
+    # Generate the periods
+    periods = pd.date_range(start=adjusted_start_date, end=end_date, freq=freq)
+
+    return [(start + timedelta(days=1), start + timedelta(days=(end - start).days)) for start, end in zip(periods, periods[1:])]

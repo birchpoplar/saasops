@@ -139,13 +139,15 @@ def build_arr_change_df(start_date, end_date, con, freq='M'):
     # Set beginning ARR for the first period
     df.at['Beginning ARR', columns[0]] = previous_ending_arr
 
+    carry_forward_churn = []    
+
     for i, (start, end) in enumerate(periods):
         arr_calculator = ARRMetricsCalculator(arr_table, start, end)
 
         # Set the beginning ARR for the period
         beginning_arr = previous_ending_arr
 
-        arr_calculator.calculate_arr_changes()
+        carry_forward_churn = arr_calculator.calculate_arr_changes(carry_forward_churn)
 
         # Calculate the ending ARR for the period, by adding New + Expansion and subtracting Contraction + Churn
         calculated_ending_arr = beginning_arr + arr_calculator.metrics['New'] + arr_calculator.metrics['Expansion'] - arr_calculator.metrics['Contraction'] - arr_calculator.metrics['Churn']

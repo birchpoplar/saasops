@@ -155,10 +155,22 @@ class ARRMetricsCalculator:
         self.end_period = end_period
         self.metrics = {'New': 0, 'Expansion': 0, 'Contraction': 0, 'Churn': 0}
 
-    def calculate_arr_changes(self):
+    def calculate_arr_changes(self, carry_forward_churn=None):
+        # Initialize carry_forward_churn if not provided
+        if carry_forward_churn is None:
+            carry_forward_churn = []
+
         # Filter data for the current period
         df = self.arr_table.data
+        print(df)
         period_data = df[(df['ARRStartDate'] <= self.end_period) & (df['ARREndDate'] >= self.start_period)]
+
+        # Additionally, consider contracts from the carry_forward_churn list
+        for contract_id in carry_forward_churn:
+            contract_data = df[df['ContractID'] == contract_id]
+            period_data = pd.concat([period_data, contract_data])
+
+        next_period_carry_forward = []
 
         # print(f"Calculating ARR changes for {len(period_data)} contracts")
         # print(f"Period start: {self.start_period}, Period end: {self.end_period}")
@@ -173,27 +185,39 @@ class ARRMetricsCalculator:
         # If a contract has an ARREndDate in the period, and there is no renewal, it is churn
 
         for index, row in period_data.iterrows():
-            # First, check if the contract is a new contract
-            if row['ARRStartDate'] >= self.start_period and not row['RenewalFromContractID']:
-                self.metrics['New'] += row['ARR']
-            # If it is a renewal, check if it is an expansion or contraction
-            elif row['ARRStartDate'] >= self.start_period and row['RenewalFromContractID']:
-                renewed_contract_id = row['RenewalFromContractID']
-                renewed_contract = period_data[period_data['ContractID'] == renewed_contract_id]
-                if not renewed_contract.empty:
-                    prior_arr = renewed_contract.iloc[0]['ARR']
-                    if row['ARR'] > prior_arr:
-                        self.metrics['Expansion'] += row['ARR'] - prior_arr
-                    elif row['ARR'] < prior_arr:
-                        self.metrics['Contraction'] += prior_arr - row['ARR']
-            # If it is not a renewal, check if it is churn, which is ARR end date in period
-            # and also if the contract is not renewed, i.e. any other contract references it as RenewalFromContractID - which has to be checked in the entire dataset
-            elif row['ARREndDate'] <= self.end_period:
-                renewed_contract = period_data[period_data['RenewalFromContractID'] == row['ContractID']]
-                if renewed_contract.empty:
+            # Handle new and renewal contracts
+            if row['ARRStartDate'] >= self.start_period:
+                if not row['RenewalFromContractID']:
+                    self.metrics['New'] += row['ARR']
+                else:
+                    renewed_contract_id = row['RenewalFromContractID']
+                    renewed_contract = df[df['ContractID'] == renewed_contract_id]
+                    if not renewed_contract.empty:
+                        prior_arr = renewed_contract.iloc[0]['ARR']
+                        if row['ARR'] > prior_arr:
+                            self.metrics['Expansion'] += row['ARR'] - prior_arr
+                        elif row['ARR'] < prior_arr:
+                            self.metrics['Contraction'] += prior_arr - row['ARR']
+
+            # Adjusted churn condition to accurately account for renewals
+            if row['ARREndDate'] <= self.end_period:
+                if row['ContractID'] in carry_forward_churn:
+                    # Process previously identified potential churn
                     self.metrics['Churn'] += row['ARR']
-                
-            
+                    carry_forward_churn.remove(row['ContractID'])
+                else:
+                    # Check for renewals before marking as churn
+                    next_contract_start = df[df['RenewalFromContractID'] == row['ContractID']]['ARRStartDate'].min()
+                    if pd.isnull(next_contract_start) or next_contract_start > row['ARREndDate'] + pd.Timedelta(days=1):
+                        if row['ARREndDate'] == self.end_period:
+                            # Potential churn carried forward if ending on the last day without immediate renewal
+                            next_period_carry_forward.append(row['ContractID'])
+                        else:
+                            # Mark as churn if no immediate renewal and not carried forward
+                            self.metrics['Churn'] += row['ARR']
+
+        # Return the list of contracts to carry forward for churn calculation in the next period
+        return next_period_carry_forward
 
     def reset_metrics(self):
         self.metrics = {key: 0 for key in self.metrics}

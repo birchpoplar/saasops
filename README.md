@@ -1,36 +1,78 @@
-# SaaSOps - SaaS Tracking & Metrics Analysis
-Track Customers, Contracts, Revenue Segments and Invoices for SaaS administration and metrics reporting. Generates recognized revenue, MRR, ARR and associated metrics for chosen time period. Output tables and charts to terminal or export to XLSX or PPTX.
+# SaaSops
 
-## Objectives
-- **Offer a platform for tracking customer and contract activity.** Intended primarily for early-stage startup execs and finance leaders.
-- **Achieve consensus in SaaS metrics reporting across exec, ops and finance functions**, such agreement being critical for reporting to investors.
-- **Ensure correct comprehension and use of metrics.** All too often users of metrics, and those who report them, don't comprehend the actual defintion and so report inaccurately to stakeholders and investors.
-- **Bring the power of expanded metrics tracking to all users.** Some of the more complex metrics are challenging to produce reliably in spreadsheet environments, and lend themselves well to implementation in a programmed environment.
+SaaSops is a comprehensive command-line application tailored for RevOps within Software as a Service (SaaS) businesses, aiming to optimize SaaS administration and metrics reporting. It merges the simplicity of managing customers, contracts, segments, and invoices with the capability to generate recognized revenue, MRR (Monthly Recurring Revenue), ARR (Annual Recurring Revenue), and related metrics for any chosen time period.
 
-## Design approach
-- **Why Open Source** - finance and finance-related functions in startups are mostly dependent upon either closed-source ledger and workflow tools or spreadsheet platforms. With increased availability of coding support and productivity tools it's possible that open source platforms could emerge for managing various aspects of the finance and operations functions in start-up and high-growth businesses.
-- **Why CLI?** - easy to get to a first working app, and for early-stage B2B startups the volume of contract activity tends to be low enough such that CLI poses little impact on productivity. An API and browser UI/UX can be added later once main platform sufficiently developed.
-- **Reconciliation to accounting** - standard reports with recognized revenue enable reconciliation to accounting data.
+Designed with efficiency at its core, SaaSops offers a robust suite of commands for seamless database interactions, dynamic data presentation, in-depth financial calculations, and versatile reporting options. Whether presenting output tables and charts directly in the terminal or exporting them to formats such as XLSX or PPTX, SaaSops is a useful tool for detailed financial analysis and data export functionalities.
 
-## Future 
-To be added.
+## Key Features
 
-## Documentation
-Current documentation can be found [here](https://birchpoplar.github.io/saasops/) on GitHub Pages.
+- **Customer Management**: List and manage customer information seamlessly.
+- **Contract Management**: Efficiently handle contract details, including sorting and filtering capabilities.
+- **Segment Management**: Organize and manage segments for targeted analysis and operations.
+- **Invoice Management**: Comprehensive invoice handling, from creation to mapping invoices to segments.
+- **Financial Calculations**: Generate detailed financial metrics, including bookings, ARR (Annual Recurring Revenue), and ARR changes over specified timeframes.
+- **Data Export**: Export data into various formats for analysis, reporting, or external use.
+- **Database Flexibility**: Easily switch between databases with simple commands, supporting a dynamic operational environment.
 
-## Demo: Adding Customers, Contracts and Segments
-https://github.com/birchpoplar/saasops/assets/4149682/c59e6287-323c-464e-a986-887f45488c54
-## Demo: Generating Metrics Reports
-https://github.com/birchpoplar/saasops/assets/4149682/737d23fe-7dd1-4c2a-a443-edd1a7ca68c5
-## Standard Analytics
-The first three charts are generated from the demonstration contract and segment details entered in the above videos. The fourth chart, showing trailing 12-month cohort analytics for Net and Gross Dollar Retention is on different data.
-### Bookings, ARR & CARR
-Note: CARR is Contracted ARR.
-![bookings_arr_carr](https://github.com/birchpoplar/saasops/assets/4149682/9ae71691-8d04-446b-aac0-241ed902a0c7)
-### Monthly MRR
-![monthly_mrr](https://github.com/birchpoplar/saasops/assets/4149682/a4a98a00-96ad-4bbc-8b16-9eeaed6d0076)
-### MRR Change
-Chart shows only the changes in MRR each month, without the starting and ending balances.
-![mrr_change](https://github.com/birchpoplar/saasops/assets/4149682/4856e103-72bb-4930-96a0-354cd32bcfcf)
-### TTM NDR & GDR
-![trailing_12_month_values](https://github.com/birchpoplar/saasops/assets/4149682/cb7508ee-277c-4e4c-b1fd-da19ada0ddc8)
+## Installation
+
+SaaSops is available for installation via pip. Ensure you have Python installed on your system and run the following command:
+
+```bash
+pip install saasops
+```
+
+Alternatively, you can clone the repository to get access to some test databases and explore the tool's full capabilities:
+
+```bash
+git clone <repository-url>
+```
+
+## Getting Started
+
+After installing SaaSops, you can start using the application by running `saasops` followed by the specific command you wish to execute. Here's a quick overview of some commands:
+
+### Set and Get Database
+
+- Set the database to use: `saasops set_db <db_name>`
+- Get the current database in use: `saasops get_db`
+
+### Customer Commands
+
+- List all customers: `saasops customer list`
+
+### Contract Commands
+
+- List all contracts: `saasops contract list [--sort_column <column_name>]`
+
+### Financial Calculations
+
+- Print bookings dataframe: `saasops calc bkingsdf <start_date> <end_date> [--customer <id>] [--contract <id>]`
+- Print ARR dataframe: `saasops calc arrdf <start_date> <end_date> [--customer <id>] [--contract <id>]`
+
+For a comprehensive list of commands and their descriptions, refer to the help option available with each command group, e.g., `saasops customer --help`.
+
+## Contributing
+
+We welcome contributions from the community! If you have suggestions for improvements or new features, please open an issue or submit a pull request.
+
+## Additional Information
+
+### Objectives
+SaaSops is designed to streamline operational efficiency for SaaS businesses, focusing on the needs of early-stage startup executives and finance leaders. The core objectives are:
+- **Comprehensive tracking** of customer and contract activities to provide a solid platform for operational and financial oversight.
+- **Standardization of SaaS metrics reporting** across executive, operations, and finance functions to ensure alignment and accuracy, crucial for investor reporting.
+- **Accurate understanding and application of metrics** to prevent misinterpretations that could mislead stakeholders and investors.
+- **Access to advanced metrics tracking**, recognizing that complex metrics can be challenging to produce reliably in spreadsheet environments and are well-suited to a programmed environment.
+
+### Design Approach
+The foundation of SaaSops is shaped by a commitment to openness and accessibility:
+- **Open Source**: The platform supports the transformative potential of open-source solutions for finance and operations functions in startups and high-growth companies, fostering innovation and community collaboration.
+- **CLI-first Strategy**: A Command-Line Interface (CLI) enables rapid development of a functional application, suitable for early-stage B2B startups with a manageable contract volume. This approach allows for future expansion to an API and browser interface as the platform evolves.
+- **Alignment with Accounting Practices**: Standard reports on recognized revenue facilitate seamless reconciliation with accounting records, ensuring financial integrity and compliance.
+
+The design philosophy emphasizes simplicity, accuracy, and accessibility, aiming to empower startups and finance professionals with effective tools for SaaS management and reporting.
+
+## License
+
+[Specify License Here] - This will depend on how you wish to license your project. Common choices include MIT, Apache 2.0, and GPL v3.

@@ -1,6 +1,7 @@
 from enum import Enum
 import pandas as pd
 import datetime
+import warnings
 
 
 class MessageStyle(Enum):
@@ -162,7 +163,6 @@ class ARRMetricsCalculator:
 
         # Filter data for the current period
         df = self.arr_table.data
-        print(df)
         period_data = df[(df['ARRStartDate'] <= self.end_period) & (df['ARREndDate'] >= self.start_period)]
 
         # Additionally, consider contracts from the carry_forward_churn list
@@ -224,11 +224,21 @@ class ARRMetricsCalculator:
 
 class ARRTable:
     def __init__(self):
-        columns = ['SegmentID', 'ContractID', 'RenewalFromContractID', 'ARRStartDate', 'ARREndDate', 'ARR']
-        self.data = pd.DataFrame()
+        # Define the dtypes for your DataFrame columns
+        dtypes = {
+            "SegmentID": 'object', 
+            "ContractID": 'object',
+            "RenewalFromContractID": 'object',
+            "CustomerName": 'object',
+            "ARRStartDate": 'datetime64[ns]',
+            "ARREndDate": 'datetime64[ns]',
+            "ARR": 'float'
+        }
+        # Initialize self.data as an empty DataFrame with these dtypes
+        self.data = pd.DataFrame({col: pd.Series(dtype=typ) for col, typ in dtypes.items()})
 
     def add_row(self, segment_data, context):
-        new_row = pd.DataFrame([{
+        new_row = {
             "SegmentID": segment_data.segment_id, 
             "ContractID": segment_data.contract_id,
             "RenewalFromContractID": segment_data.renewal_from_contract_id,
@@ -236,8 +246,15 @@ class ARRTable:
             "ARRStartDate": pd.to_datetime(context.arr_start_date),
             "ARREndDate": pd.to_datetime(context.arr_end_date),
             "ARR": context.arr
-        }])
-        self.data = pd.concat([self.data, new_row], ignore_index=True)        
+        }
+        # Convert new_row dict to DataFrame with a single row, aligning with self.data's columns
+        new_row_df = pd.DataFrame([new_row], columns=self.data.columns)
+
+        # Suppress FutureWarning for DataFrame concatenation
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=FutureWarning)
+            self.data = pd.concat([self.data, new_row_df], ignore_index=True)
+
 
     def update_renewed_segment_arr_end_date(self, segment_id, new_arr_end_date):
         self.data.loc[self.data['SegmentID'] == segment_id, 'ARREndDate'] = pd.to_datetime(new_arr_end_date)

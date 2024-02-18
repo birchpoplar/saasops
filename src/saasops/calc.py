@@ -43,8 +43,6 @@ def customer_arr_tbl(date, con, ignore_zeros=False, tree_detail=False):
     # Add a total ARR sum as last row
     df.loc['Total'] = df.sum()
 
-    print(df)
-
     return df
 
 
@@ -58,45 +56,56 @@ def customer_arr_df(start_date, end_date, con, timeframe='M', ignore_zeros=True)
 
         # Build temp table in database of ARR data
         arr_table = build_arr_table(con)
-
         # print(f"ARR Table: {arr_table.data.shape[0]} rows")
         # print(f"ARR Table Data: {arr_table.data}")
         
         # Filter active segments for the period
-        active_segments = arr_table.data[
-            (arr_table.data['ARRStartDate'] <= period_end_timestamp) &
-            (arr_table.data['ARREndDate'] >= period_end_timestamp)
-        ]
-        has_renewal = active_segments['ContractID'].isin(active_segments['RenewalFromContractID'].dropna())
-        active_segments = active_segments[~has_renewal]
+        if not arr_table.data.empty:
+            active_segments = arr_table.data[
+                (arr_table.data['ARRStartDate'] <= period_end_timestamp) &
+                (arr_table.data['ARREndDate'] >= period_end_timestamp)
+            ]
+            has_renewal = active_segments['ContractID'].isin(active_segments['RenewalFromContractID'].dropna())
+            active_segments = active_segments[~has_renewal]
 
-        # print("Period Start:", period_start)
-        # print("Period End:", period_end)
-        # print(active_segments)
+            # print("Period Start:", period_start)
+            # print("Period End:", period_end)
+            # print(active_segments)
         
-        # Sum ARR per customer for the period
-        df = active_segments.groupby('CustomerName')['ARR'].sum().reset_index()
-        df.set_index('CustomerName', inplace=True)
+            # Sum ARR per customer for the period
+            if not active_segments.empty:
+                df = active_segments.groupby('CustomerName')['ARR'].sum().reset_index()
+                df.set_index('CustomerName', inplace=True)
         
-        if ignore_zeros:
-            df = df[df['ARR'] != 0]
+                if ignore_zeros:
+                    df = df[df['ARR'] != 0]
 
-        # Format column name based on the timeframe
-        column_name = format_column_name(period_end, timeframe)
-        df.rename(columns={'ARR': column_name}, inplace=True)
+                # Format column name based on the timeframe
+                column_name = format_column_name(period_end, timeframe)
+                df.rename(columns={'ARR': column_name}, inplace=True)
 
-        # Join the dataframes
-        if final_df.empty:
-            final_df = df
-        else:
-            final_df = final_df.join(df, how='outer')
+                # Join the dataframes
+                if final_df.empty:
+                    final_df = df
+                else:
+                    final_df = final_df.join(df, how='outer')
+
+            else:
+                # Handle the case where active_segments is empty after filtering
+                if final_df.empty:
+                    # Initialize final_df with the correct column if it's the first iteration
+                    final_df = pd.DataFrame(columns=[format_column_name(period_end, timeframe)])
+                else:
+                    # If final_df is not empty but no active segments in this period, ensure the column is added
+                    final_df[format_column_name(period_end, timeframe)] = 0
         
         current_date = (period_end + pd.Timedelta(days=1)).date()
     
     final_df.fillna(0, inplace=True)  # Replace NaN with 0
 
     # Add a row that sums ARR per period
-    final_df.loc['Total ARR'] = final_df.sum()
+    if not final_df.empty:
+        final_df.loc['Total ARR'] = final_df.sum()
 
     return final_df
 

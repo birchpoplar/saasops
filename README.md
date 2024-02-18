@@ -1,5 +1,7 @@
 # SaaSops
 
+> **Note:** This application is under constant development, and functionality may vary over time. Users are encouraged to try the app, provide feedback, and help identify any issues. Contributions towards improving SaaSops are highly welcomed.
+
 SaaSops is a comprehensive command-line application tailored for RevOps within Software as a Service (SaaS) businesses, aiming to optimize SaaS administration and metrics reporting. It merges the simplicity of managing customers, contracts, segments, and invoices with the capability to generate recognized revenue, MRR (Monthly Recurring Revenue), ARR (Annual Recurring Revenue), and related metrics for any chosen time period.
 
 Designed with efficiency at its core, SaaSops offers a robust suite of commands for seamless database interactions, dynamic data presentation, in-depth financial calculations, and versatile reporting options. Whether presenting output tables and charts directly in the terminal or exporting them to formats such as XLSX or PPTX, SaaSops is a useful tool for detailed financial analysis and data export functionalities.

@@ -40,6 +40,11 @@ def customer_arr_tbl(date, con, ignore_zeros=False, tree_detail=False):
     if ignore_zeros:
         df = df[df['TotalARR'] != 0]
 
+    # Add a total ARR sum as last row
+    df.loc['Total'] = df.sum()
+
+    print(df)
+
     return df
 
 
@@ -89,6 +94,10 @@ def customer_arr_df(start_date, end_date, con, timeframe='M', ignore_zeros=True)
         current_date = (period_end + pd.Timedelta(days=1)).date()
     
     final_df.fillna(0, inplace=True)  # Replace NaN with 0
+
+    # Add a row that sums ARR per period
+    final_df.loc['Total ARR'] = final_df.sum()
+
     return final_df
 
 
@@ -117,6 +126,9 @@ def new_arr_by_timeframe(date, con, timeframe="M", ignore_zeros=False):
     if ignore_zeros:
         df = df[df['TotalNewARR'] != 0]
 
+    # Add a total ARR sum as last row
+    df.loc['Total'] = df.sum()
+
     return df
 
 
@@ -134,7 +146,8 @@ def build_arr_change_df(start_date, end_date, con, freq='M'):
     # use the customer_arr_tbl function to calculate the ARR for the previous period
     previous_start, previous_end = periods[0]
     previous_end = previous_start - timedelta(days=1)
-    previous_ending_arr = customer_arr_tbl(previous_end, con).sum().values[0]
+    # The customer ARR table has a Total row at the bottom of column TotalARR, so we can use that to get the previous ending ARR
+    previous_ending_arr = customer_arr_tbl(previous_end, con).loc['Total', 'TotalARR']
 
     # Set beginning ARR for the first period
     df.at['Beginning ARR', columns[0]] = previous_ending_arr

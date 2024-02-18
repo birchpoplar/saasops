@@ -109,6 +109,8 @@ def print_segments(con, console=None, sort_column=None):
     # Print the table to the console
     console.print(table)
 
+    return df # Return the dataframe for further processing
+
 
 def print_contracts(con, console=None, sort_column=None):
     
@@ -417,7 +419,7 @@ def print_contracts_without_segments(con, console=None):
 
 # Helper functions
 
-def generate_title(base_title, start_date, end_date, timeframe, format_type, customer=None, contract=None):
+def generate_title(base_title, start_date, end_date, timeframe, format_type=None, customer=None, contract=None):
     title = f'{base_title}, {start_date.strftime("%b %d, %Y")} to {end_date.strftime("%b %d, %Y")}, Frequency: {timeframe}'
 
     # Append unit indication based on format_type

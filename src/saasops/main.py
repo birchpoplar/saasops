@@ -34,13 +34,13 @@ app.add_typer(export_app, name="export")
 
 # Database selection commands
 
-@app.command("set_db")
-def set_db(db_name: str):
-    """
-    Set the database to use.
-    """
-    os.environ["DB_NAME"] = db_name
-    typer.echo(f"Database set to: {db_name}")
+# @app.command("set_db")
+# def set_db(db_name: str):
+#     """
+#     Set the database to use.
+#     """
+#     os.environ["DB_NAME"] = db_name
+#     typer.echo(f"Database set to: {db_name}")
 
 @app.command("get_db")
 def get_db():
@@ -158,13 +158,29 @@ def listcont(sort_column: Optional[str]=None):
 # Segment commands
 
 @segment_app.command("list")
-def listseg(sort_column: Optional[str]=None):
+def listseg(sort_column: Optional[str]=None,
+            exportfile: Optional[str]=None):
     """
     List all segments.
     """
     console = Console()
     con = database.connect_database(console)
-    display.print_segments(con, console, sort_column)
+    df = display.print_segments(con, console, sort_column)
+
+    # Check if exportfile argument is provided
+    if exportfile:
+        # Ensure the exports directory exists
+        exports_dir = "exports"
+        os.makedirs(exports_dir, exist_ok=True)
+
+        # Define the full path for the CSV file
+        filepath = os.path.join(exports_dir, f"{exportfile}.csv")
+
+        # Export the DataFrame to CSV
+        df.to_csv(filepath, index=True)
+
+        # Optionally, print a message to the console indicating the export was successful
+        console.print(f"Segments list data exported to {filepath}", style="green")
 
 # @segment_app.command("print")
 # def prntseg(segment_id: int):
@@ -356,17 +372,28 @@ def bkingstbl(date: str,
     
 @calc_app.command("arr")
 def arrtbl(date: str,
-          # ignoreoverrides: Optional[bool]=False,
-          ignore_zeros: bool = typer.Option(False, "--ignore_zeros", help="Ignore customers with zero ARR."),
-          tree_detail: Optional[bool]=False):
+        # ignoreoverrides: Optional[bool]=False,
+        customer: Optional[int]=None,
+        contract: Optional[int]=None, 
+        ignore_zeros: bool = typer.Option(False, "--ignore_zeros", help="Ignore customers with zero ARR."),
+        tree_detail: Optional[bool]=False):
     """
     Print ARR table for specific date.
     """
     console = Console()
     con = database.connect_database(console)
     date = datetime.strptime(date, '%Y-%m-%d').date()
-    df = calc.customer_arr_tbl(date, con, ignore_zeros, tree_detail)
-    display.print_combined_table(df, f'ARR at {date}', console)
+
+    # Dynamically build the title based on provided arguments
+    title_parts = [f'ARR at {date}']
+    if customer:
+        title_parts.append(f'Customer: {customer}')
+    if contract:
+        title_parts.append(f'Contract: {contract}')
+    title = ' | '.join(title_parts)  # Combine parts into a single string
+
+    df = calc.customer_arr_tbl(date, con, customer, contract, ignore_zeros, tree_detail)
+    display.print_combined_table(df, title, console)
 
 # @calc_app.command("carr")
 # def carrdf(date: str,
@@ -398,7 +425,13 @@ def arrnewtf(date: str, timeframe: Optional[str]='M'):
 
 
 @calc_app.command("arrchange")
-def arrchangedf(start_date: str, end_date: str, timeframe: Optional[str]='M'):
+def arrchangedf(start_date: str,
+                end_date: str,
+                customer: Optional[int]=None,
+                contract: Optional[int]=None,
+                timeframe: Optional[str]='M',
+                format_type: Optional[str]=None,
+                exportfile: Optional[str]=None):
     """
     Print ARR Change table for month or quarter.
     """
@@ -411,11 +444,26 @@ def arrchangedf(start_date: str, end_date: str, timeframe: Optional[str]='M'):
     end_date_parsed = datetime.strptime(end_date, "%Y-%m-%d").date()
 
     # Calculate the ARR change dataframe
-    df = calc.build_arr_change_df(start_date_parsed, end_date_parsed, con, timeframe)
+    df = calc.build_arr_change_df(start_date_parsed, end_date_parsed, con, timeframe, format_type, customer, contract)
 
-    df_title = display.generate_title("ARR Change", start_date_parsed, end_date_parsed, timeframe, None, None, None)
+    df_title = display.generate_title("ARR Change", start_date_parsed, end_date_parsed, timeframe, format_type=format_type, customer=customer, contract=contract)
 
     display.print_combined_table(df, df_title, console)
+
+    # Check if exportfile argument is provided
+    if exportfile:
+        # Ensure the exports directory exists
+        exports_dir = "exports"
+        os.makedirs(exports_dir, exist_ok=True)
+
+        # Define the full path for the CSV file
+        filepath = os.path.join(exports_dir, f"{exportfile}.csv")
+
+        # Export the DataFrame to CSV
+        df.to_csv(filepath, index=True) # Index is included in the export
+
+        # Optionally, print a message to the console indicating the export was successful
+        console.print(f"ARR Change data exported to {filepath}", style="green")
 
      
 # @calc_app.command("arrmetrics")

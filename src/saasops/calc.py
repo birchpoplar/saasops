@@ -15,12 +15,12 @@ import numpy as np
 
 # ARR Calculation Functions
 
-def customer_arr_tbl(date, con, ignore_zeros=False, tree_detail=False):
+def customer_arr_tbl(date, con, customer=None, contract=None, ignore_zeros=False, tree_detail=False):
     # Convert the date to a pandas Timestamp
     date_as_timestamp = pd.to_datetime(date)
 
     # Build the ARR table instance (which now uses a DataFrame)
-    arr_table = build_arr_table(con)
+    arr_table = build_arr_table(con, customer=customer, contract=contract)
 
     # print(f"ARR Table: {arr_table.data.shape[0]} rows")
     # print(f"ARR Table Columns: {arr_table.data.columns}")
@@ -141,8 +141,8 @@ def new_arr_by_timeframe(date, con, timeframe="M", ignore_zeros=False):
     return df
 
 
-def build_arr_change_df(start_date, end_date, con, freq='M'):
-    arr_table = build_arr_table(con)
+def build_arr_change_df(start_date, end_date, con, freq='M', format_type=None, customer=None, contract=None):
+    arr_table = build_arr_table(con, customer=customer, contract=contract)
     
     periods = generate_periods(start_date, end_date, freq)
     # columns = [f"{start.strftime('%Y-%m-%d')} to {end.strftime('%Y-%m-%d')}" for start, end in periods]
@@ -156,7 +156,7 @@ def build_arr_change_df(start_date, end_date, con, freq='M'):
     previous_start, previous_end = periods[0]
     previous_end = previous_start - timedelta(days=1)
     # The customer ARR table has a Total row at the bottom of column TotalARR, so we can use that to get the previous ending ARR
-    previous_ending_arr = customer_arr_tbl(previous_end, con).loc['Total', 'TotalARR']
+    previous_ending_arr = customer_arr_tbl(previous_end, con, customer=customer, contract=contract).loc['Total', 'TotalARR']
 
     # Set beginning ARR for the first period
     df.at['Beginning ARR', columns[0]] = previous_ending_arr
@@ -188,7 +188,7 @@ def build_arr_change_df(start_date, end_date, con, freq='M'):
     return df
 
 
-def build_arr_table(con):
+def build_arr_table(con, customer=None, contract=None):
     # Retrieve segment data from the database
     query = """
     SELECT s.SegmentID, s.ContractID, c.RenewalFromContractID, cu.Name, c.ContractDate, 
@@ -196,8 +196,22 @@ def build_arr_table(con):
            s.Title, s.Type, s.SegmentValue
     FROM Segments s
     JOIN Contracts c ON s.ContractID = c.ContractID
-    JOIN Customers cu ON c.CustomerID = cu.CustomerID;
+    JOIN Customers cu ON c.CustomerID = cu.CustomerID
     """
+
+    # Apply filters within the SQL query if parameters are provided
+    conditions = []
+    if customer:
+        conditions.append(f"cu.CustomerID = '{customer}'")
+    if contract:
+        conditions.append(f"c.ContractID = '{contract}'")
+
+    if conditions:
+        query += " WHERE " + " AND ".join(conditions)
+
+    # print(customer, contract)
+    # print(query)
+
     result = con.execute(query)
     rows = result.fetchall()
 
@@ -210,6 +224,11 @@ def build_arr_table(con):
         arr_table.add_row(segment_data, context)
 
     arr_table.update_for_renewal_contracts()
+
+    # print(f"ARR Table: {arr_table.data.shape[0]} rows")
+    # print(f"ARR Table Columns: {arr_table.data.columns}")
+    # print(f"ARR Table Data Types: {arr_table.data.dtypes}")
+    # print(f"ARR Table Data: {arr_table.data}")
 
     return arr_table
 

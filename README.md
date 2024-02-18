@@ -34,7 +34,6 @@ After installing SaaSops, you can start using the application by running `saasop
 
 ### Set and Get Database
 
-- Set the database to use: `saasops set_db <db_name>`
 - Get the current database in use: `saasops get_db`
 
 ### Customer Commands
@@ -75,4 +74,4 @@ The design philosophy emphasizes simplicity, accuracy, and accessibility, aiming
 
 ## License
 
-[Specify License Here] - This will depend on how you wish to license your project. Common choices include MIT, Apache 2.0, and GPL v3.
+This project is licensed under the MIT License - see the LICENSE file for details.
